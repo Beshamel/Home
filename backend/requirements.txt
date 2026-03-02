@@ -1,0 +1,10 @@
+fastapi
+redis
+types-redis
+uvicorn
+alembic
+sqlalchemy
+mysqlclient
+black
+python-multipart
+dotenv
