@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import type { QuickAccessLink } from "../types"
 import queryClient from "../api/client"
+import { LocalTimeMode, LocalUTC, LocalDisplaySeconds } from "../api/localStorage"
 
 function Home() {
   const [time, setTime] = useState(new Date())
@@ -9,11 +10,18 @@ function Home() {
   const searchRef = useRef<HTMLInputElement | null>(null)
 
   const [quickAccessLinks, setQuickAccessLinks] = useState<QuickAccessLink[]>([])
-  const [quickAccessString, setQuickAccessString] = useState("")
+
+  const [timeFormat, setTimeFormat] = useState<string>(LocalTimeMode.get()!)
+  const [timeUTC, setTimeUTC] = useState(LocalUTC.get() === "true")
+  const [displaySeconds, setDisplaySeconds] = useState(LocalDisplaySeconds.get() === "true")
+
+  const refreshTime = () => {
+    setTime(new Date())
+  }
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setTime(new Date())
+      refreshTime()
     }, 1000)
     return () => clearInterval(interval)
   }, [])
@@ -45,30 +53,56 @@ function Home() {
         e.preventDefault()
         searchRef.current?.focus()
       }
+
+      if (e.key === "z") {
+        LocalUTC.set(timeUTC ? "false" : "true")
+        setTimeUTC((t) => !t)
+        refreshTime()
+      }
+
+      if (e.key === "x") {
+        const newTimeFormat = timeFormat === "24h" ? "12h" : "24h"
+        LocalTimeMode.set(newTimeFormat)
+        setTimeFormat(newTimeFormat)
+        refreshTime()
+      }
+
+      if (e.key === "s") {
+        LocalDisplaySeconds.set(displaySeconds ? "false" : "true")
+        setDisplaySeconds((d) => !d)
+      }
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [searchMode])
+  }, [searchMode, timeUTC, timeFormat])
 
   useEffect(() => {
     if (searchMode) {
-      const matches = quickAccessLinks.filter((l) =>
-        l.shortcuts.some((s) => s.startsWith(quickAccessString.toLowerCase())),
-      )
+      const matches = quickAccessLinks.filter((l) => l.shortcuts.some((s) => s.startsWith(searchValue.toLowerCase())))
       if (matches.length === 1) {
         window.open(matches[0].url, "_blank")
-        setQuickAccessString("")
+        setSearchValue("")
       }
     }
-  }, [quickAccessString, searchMode])
+  }, [searchValue, searchMode])
 
-  const day = time.getDate()
-  const month = time.getMonth() + 1
-  const year = time.getFullYear()
+  const displayedTime = timeUTC ? new Date(time.getTime() + time.getTimezoneOffset() * 60000) : time
 
-  const timeH = time.getHours()
-  const timeM = time.getMinutes()
-  const timeS = time.getSeconds()
+  const day = displayedTime.getDate()
+  const month = displayedTime.getMonth() + 1
+  const year = displayedTime.getFullYear()
+
+  let timeH = displayedTime.getHours()
+  const ampm = timeH >= 12 ? "PM" : "AM"
+  if (timeFormat === "12h") {
+    if (timeH === 0) {
+      timeH = 12
+    } else if (timeH > 12) {
+      timeH = timeH - 12
+    }
+  }
+  const timeM = displayedTime.getMinutes()
+  const timeS = displayedTime.getSeconds()
 
   return (
     <div className="home-page">
@@ -76,7 +110,9 @@ function Home() {
         <span className="hm">
           {timeH < 10 ? `0${timeH}` : timeH}:{timeM < 10 ? `0${timeM}` : timeM}
         </span>
-        <span className="s">{timeS < 10 ? `0${timeS}` : timeS}</span>
+        {displaySeconds && <span className="s">{timeS < 10 ? `0${timeS}` : timeS}</span>}
+        {timeFormat === "12h" && <span className="ampm">{ampm}</span>}
+        {timeUTC && <span className="utc">{"Z"}</span>}
         <br />
         <span className="date">
           {`${day < 10 ? `0${day}` : day} / ${month < 10 ? `0${month}` : month} / ${year % 100 < 10 ? `0${year % 100}` : year % 100}`}
@@ -99,16 +135,13 @@ function Home() {
           name="q"
           type="text"
           placeholder={searchMode ? "Quick access..." : "Search Google..."}
-          value={searchMode ? quickAccessString : searchValue}
+          value={searchValue}
           onChange={(e) => {
-            if (searchMode) {
-              setQuickAccessString(e.target.value)
-            } else {
-              setSearchValue(e.target.value)
-            }
+            setSearchValue(e.target.value)
           }}
           autoComplete="off"
           spellCheck={false}
+          autoFocus
           ref={searchRef}
         />
       </form>

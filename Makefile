@@ -1,5 +1,5 @@
 build:
-	cd home && npm run build
+	cd home && npm i --legacy-peer-deps && npm run build
 	nssm restart home
 
 dev:

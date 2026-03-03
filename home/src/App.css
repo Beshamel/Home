@@ -36,6 +36,20 @@ h1 {
   margin-left: 0.25rem;
 }
 
+.home-clock .utc {
+  color: #888888;
+  font-size: 2rem;
+  font-weight: 650;
+  margin-left: 0.25rem;
+}
+
+.home-clock .ampm {
+  color: #888888;
+  font-size: 2rem;
+  font-weight: 650;
+  margin-left: 0.25rem;
+}
+
 .home-clock .date {
   color: #bbbbbb;
   font-size: 2rem;

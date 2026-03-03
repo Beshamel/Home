@@ -21,7 +21,7 @@ function Kiwi() {
   const { title: f_title } = useParams<{ title: string }>()
   const [pageContent, setPageContent] = useState<KiwiPageData | null>(null)
   const [newPage, setNewPage] = useState(false)
-  const [newPageTitle, setNewPageTitle] = useState(f_title || "")
+  const [newPageTitle, setNewPageTitle] = useState(f_title?.replace("_", " ") || "")
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<KiwiPageData[]>([])
   const searchRef = useRef<HTMLInputElement | null>(null)
@@ -80,7 +80,7 @@ function Kiwi() {
       await queryClient.post("/kiwi", null, {
         params: {
           title: newPageTitle,
-          raw_content: "This page is empty.",
+          raw_content: `# ${newPageTitle}\n\n`,
         },
       })
       handleEditPage()
