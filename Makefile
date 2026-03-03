@@ -6,4 +6,4 @@ dev:
 	cd home && npm run dev
 
 app-dev:
-	cd backend && pip install -r requirements.txt && uvicorn main:app --reload --port 8081
+	cd backend && alembic upgrade head && pip install -r requirements.txt && uvicorn main:app --reload --port 8081
