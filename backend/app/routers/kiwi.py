@@ -21,9 +21,9 @@ def kiwi_page(f_title: str, db: Session = Depends(get_db_session)) -> KiwiPageDa
 
 @router.get("/search", response_model=t.List[KiwiPageData])
 def search_kiwi_page(
-    query: str, db: Session = Depends(get_db_session)
+    query: str, limit: int = 0, db: Session = Depends(get_db_session)
 ) -> t.List[KiwiPageData]:
-    return search_kiwi_pages(db, query)
+    return search_kiwi_pages(db, query, limit)
 
 
 @router.post("/", response_model=KiwiPageData)

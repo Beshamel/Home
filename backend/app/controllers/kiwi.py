@@ -368,10 +368,11 @@ def delete_kiwi_page(db: Session, f_title: str) -> None:
     db.commit()
 
 
-def search_kiwi_pages(db: Session, query: str) -> t.List[KiwiPageData]:
-    pages = (
-        db.query(KiwiPageModel).filter((KiwiPageModel.title.ilike(f"%{query}%"))).all()
-    )
+def search_kiwi_pages(db: Session, query: str, limit: int = 0) -> t.List[KiwiPageData]:
+    q = db.query(KiwiPageModel).filter(KiwiPageModel.title.ilike(f"%{query}%"))
+    if limit > 0:
+        q = q.limit(limit)
+    pages = q.all()
     return [
         KiwiPageData(
             title=page.title,

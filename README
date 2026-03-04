@@ -1,19 +1,8 @@
-Client DB => HeidiSQL
-
-alembic revision -m "ABCD" --autogenerate
-
-NSSM :
-front -> home
-back -> home-app
-
 Installer :
+
 - MySQL
-- Make
 - NSSM
 - Python
+- Caddy
 
 Construit avec Python 3.14.3
-
-Changelog
-
-1.0 : Basic features

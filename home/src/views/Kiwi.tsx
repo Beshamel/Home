@@ -25,6 +25,7 @@ function Kiwi() {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<KiwiPageData[]>([])
   const [pageTitle, setPageTitle] = useState(f_title?.replace("_", " ") || "")
+  const searchWrapperRef = useRef<HTMLDivElement | null>(null)
   const searchRef = useRef<HTMLInputElement | null>(null)
   const navigate = useNavigate()
 
@@ -109,53 +110,74 @@ function Kiwi() {
     navigate(`/kiwi/${f_title}/edit`)
   }
 
+  const handleGetSearchResults = async (
+    e: React.ChangeEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>,
+  ) => {
+    setSearchQuery(e.target.value)
+    const search = e.currentTarget.value.trim()
+    if (search.trim() === "") {
+      setSearchResults([])
+      return
+    }
+    try {
+      const res = await queryClient.get<KiwiPageData[]>("/kiwi/search", {
+        params: { query: search.trim(), limit: 5 },
+      })
+      setSearchResults(res.data)
+    } catch (err) {
+      setSearchResults([])
+      console.error("Error searching Kiwi pages:", err)
+    }
+  }
+
   return (
     <>
-      <div className="kiwi-page">
+      <div
+        className="kiwi-page"
+        onClick={(e) => {
+          e.stopPropagation()
+          if (searchWrapperRef.current && !searchWrapperRef.current.contains(document.activeElement)) {
+            setSearchResults([])
+          }
+        }}
+      >
         <div className="kiwi-sidebar">
           {pageContent && <div className="kiwi-toc">{renderTableOfContents(pageContent)}</div>}
         </div>
         <main className="kiwi-main">
-          <button onClick={handleGoHome}>{"Home"}</button>
-          {!newPage && <button onClick={handleEditPage}>{"Edit"}</button>}
-          <input
-            className="search-input"
-            type="text"
-            placeholder="Search..."
-            ref={searchRef}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={async (e) => {
-              if (e.key === "Enter") {
-                e.preventDefault()
-                if (searchQuery.trim() === "") {
-                  setSearchResults([])
-                  return
-                }
-                try {
-                  const response = await queryClient.get<KiwiPageData[]>(`/kiwi/search`, {
-                    params: { query: searchQuery },
-                  })
-                  setSearchResults(response.data)
-                } catch (error) {
-                  console.error("Error searching pages:", error)
-                  alert("Failed to search pages.")
-                }
-              }
-            }}
-          />
-          {searchResults.length > 0 && (
-            <div className="search-results">
-              <p>{"Search results :"}</p>
-              <ul>
-                {searchResults.map((result) => (
-                  <li key={result.fTitle}>
-                    <a href={`/kiwi/${result.fTitle}`}>{result.title}</a>
-                  </li>
-                ))}
-              </ul>
+          <header className="kiwi-header">
+            <button onClick={handleGoHome}>{"Home"}</button>
+            {!newPage && <button onClick={handleEditPage}>{"Edit"}</button>}
+            <div className="kiwi-search" ref={searchWrapperRef}>
+              <input
+                className="kiwi-search-input"
+                id="kiwi-search-input"
+                type="text"
+                placeholder="Search..."
+                ref={searchRef}
+                value={searchQuery}
+                onChange={handleGetSearchResults}
+                onFocus={handleGetSearchResults}
+              />
+              {searchResults.length > 0 && (
+                <div className="kiwi-search-results">
+                  {searchResults.map((result) => (
+                    <div key={result.fTitle} className="kiwi-search-result">
+                      <button
+                        onClick={() => {
+                          navigate(`/kiwi/${result.fTitle}`)
+                          setSearchQuery("")
+                          setSearchResults([])
+                        }}
+                      >
+                        {result.title}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </header>
           {newPage ? (
             <>
               <p>{"This page does not exist yet. You can create it here."}</p>

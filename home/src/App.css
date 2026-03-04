@@ -24,7 +24,7 @@ h1 {
   line-height: 2.5rem;
 }
 
-.home-clock .hm{
+.home-clock .hm {
   font-size: 6rem;
   font-weight: 600;
 }
@@ -107,6 +107,12 @@ h1 {
   background-color: #3d3d3d;
 }
 
+.kiwi-page button:disabled {
+  background-color: #252525;
+  color: grey;
+  cursor: not-allowed;
+}
+
 .kiwi-page input {
   background-color: #2b2b2b;
   color: inherit;
@@ -120,7 +126,7 @@ h1 {
   width: 90%;
   max-width: 1000px;
   padding: 1.5rem;
-  border-left: #888888 1px solid ;
+  border-left: #888888 1px solid;
   flex-grow: 1;
 }
 
@@ -136,7 +142,8 @@ h1 {
   margin-bottom: 5px;
 }
 
-.kiwi-main ul, .kiwi-main ol {
+.kiwi-main ul,
+.kiwi-main ol {
   margin-top: 5px;
   margin-bottom: 5px;
 }
@@ -155,7 +162,8 @@ h1 {
   margin: 1rem 0;
 }
 
-.kiwi-table th, .kiwi-table td {
+.kiwi-table th,
+.kiwi-table td {
   border: 1px solid #6b6b6b;
   padding: 0.5rem;
 }
@@ -199,6 +207,15 @@ h1 {
   background-color: #242424;
   flex-shrink: 0;
   overflow-y: scroll;
+}
+
+.kiwi-main header {
+  display: flex;
+  flex-direction: row;
+}
+
+.kiwi-main header .kiwi-search {
+  margin: 0.25rem;
 }
 
 .table-of-contents {
@@ -252,7 +269,8 @@ h1 {
   resize: vertical;
 }
 
-.kiwi-file-uploader-wrapper {
+.kiwi-file-uploader-wrapper,
+.kiwi-link-adder-wrapper {
   position: fixed;
   top: 0;
   left: 0;
@@ -264,12 +282,97 @@ h1 {
   justify-content: center;
 }
 
-.kiwi-file-uploader {
+.kiwi-file-uploader,
+.kiwi-link-adder {
   background-color: #1f1f1f;
   padding: 2rem;
   border-radius: 8px;
 }
 
-.kiwi-file-uploader h2 {
+.kiwi-file-uploader h2,
+.kiwi-link-adder h2 {
   margin-top: 0;
+}
+
+.kiwi-search {
+  margin: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+#kiwi-search-input {
+  margin: 0px;
+}
+
+#kiwi-search-input:has(+ .kiwi-search-results) {
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
+
+.kiwi-search-input.has-target {
+  background-color: #646cff66;
+}
+
+.kiwi-search-results {
+  max-height: 0px;
+  position: relative;
+}
+
+.kiwi-search-result {
+  background-color: #2b2b2b;
+}
+
+.kiwi-search-result:first-child {
+  border-top: #6b6b6b 1px solid;
+}
+
+.kiwi-search-result:last-child {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.kiwi-search-result button {
+  width: 100%;
+  height: 100%;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0.5rem 1rem;
+  margin: 0;
+  font-size: inherit;
+  cursor: pointer;
+  border-radius: 0px;
+  text-align: left;
+}
+
+.option-selector {
+  display: flex;
+  margin: 0.25rem;
+}
+
+.option-selector button {
+  background-color: #2b2b2b;
+  color: inherit;
+  border: none;
+  padding: 0.5rem 1rem;
+  margin: 0;
+  border-radius: 0px;
+  cursor: pointer;
+}
+
+.option-selector button:hover {
+  background-color: #3d3d3d;
+}
+
+.option-selector button.active {
+  background-color: #646cff;
+}
+
+.option-selector button:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.option-selector button:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
 }

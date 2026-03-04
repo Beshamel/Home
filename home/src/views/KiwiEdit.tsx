@@ -8,7 +8,18 @@ function KiwiEdit() {
   const navigate = useNavigate()
 
   const [pageContent, setPageContent] = useState<KiwiPageData | null>(null)
+
   const [fileUploaderOpen, setFileUploaderOpen] = useState(false)
+
+  const [linkAdderOpen, setLinkAdderOpen] = useState(false)
+  const [linkAdderMode, setLinkAdderMode] = useState<"external" | "kiwi">("external")
+  const [linkAdderUrl, setLinkAdderUrl] = useState("")
+  const [linkAdderText, setLinkAdderText] = useState("")
+  const [linkAdderKiwiTarget, setLinkAdderKiwiTarget] = useState("")
+  const [linkAdderKiwiSearch, setLinkAdderKiwiSearch] = useState("")
+  const [linkAdderKiwiSearchResults, setLinkAdderKiwiSearchResults] = useState<KiwiPageData[]>([])
+  const linkAdderSearchRef = useRef<HTMLDivElement | null>(null)
+
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   useEffect(() => {
@@ -96,8 +107,51 @@ function KiwiEdit() {
     }
   }
 
+  const insertAtCursor = (text: string) => {
+    const ta = textareaRef.current
+    if (!ta) return
+    ta.focus()
+    const start = ta.selectionStart ?? 0
+    const end = ta.selectionEnd ?? 0
+    const next = ta.value.slice(0, start) + text + ta.value.slice(end)
+    ta.value = next
+    const pos = start + text.length
+    try {
+      ta.setSelectionRange(pos, pos)
+    } catch {
+      ta.selectionStart = pos
+      ta.selectionEnd = pos
+    }
+    setPageContent((prevState) => (prevState ? { ...prevState, rawContent: next } : prevState))
+  }
+
   const handleOpenFileUploader = () => {
+    setLinkAdderOpen(false)
     setFileUploaderOpen(true)
+  }
+
+  const handleOpenLinkAdder = () => {
+    setFileUploaderOpen(false)
+    setLinkAdderOpen(true)
+  }
+
+  const handleLinkAdderGetSearchResults = async (
+    e: React.ChangeEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>,
+  ) => {
+    setLinkAdderKiwiSearch(e.currentTarget.value)
+    const search = e.currentTarget.value.trim()
+    if (!search.trim()) {
+      setLinkAdderKiwiSearchResults([])
+      return
+    }
+    try {
+      const res = await queryClient.get<KiwiPageData[]>("/kiwi/search", {
+        params: { query: search.trim(), limit: 5 },
+      })
+      setLinkAdderKiwiSearchResults(res.data)
+    } catch (err) {
+      console.error("Error searching Kiwi pages:", err)
+    }
   }
 
   const savePage = async () => {
@@ -125,7 +179,7 @@ function KiwiEdit() {
       const res = await queryClient.post("/media", formData)
       const filename = res.data.filename
       const mediaCode = `<M ${filename}>`
-      window.navigator.clipboard.writeText(mediaCode)
+      insertAtCursor(mediaCode)
       return filename
     } catch (error) {
       console.error("Error uploading file:", error)
@@ -146,13 +200,14 @@ function KiwiEdit() {
   useEffect(() => {
     const onKeyDown = async (e: KeyboardEvent) => {
       const key = e.key?.toLowerCase()
-      if ((e.ctrlKey || e.metaKey) && key === "s" && !fileUploaderOpen) {
+      if ((e.ctrlKey || e.metaKey) && key === "s" && !fileUploaderOpen && !linkAdderOpen) {
         e.preventDefault()
         await savePage()
       }
       if (key === "escape") {
         e.preventDefault()
         setFileUploaderOpen(false)
+        setLinkAdderOpen(false)
       }
     }
     window.addEventListener("keydown", onKeyDown)
@@ -162,8 +217,13 @@ function KiwiEdit() {
   return (
     <div className="kiwi-page">
       {fileUploaderOpen && (
-        <div className="kiwi-file-uploader-wrapper">
-          <div className="kiwi-file-uploader">
+        <div
+          className="kiwi-file-uploader-wrapper"
+          onClick={() => {
+            setFileUploaderOpen(false)
+          }}
+        >
+          <div className="kiwi-file-uploader" onClick={(e) => e.stopPropagation()}>
             <h2>{"Upload media"}</h2>
             <form
               onSubmit={async (e) => {
@@ -191,6 +251,114 @@ function KiwiEdit() {
           </div>
         </div>
       )}
+      {linkAdderOpen && (
+        <div
+          className="kiwi-link-adder-wrapper"
+          onClick={() => {
+            setLinkAdderOpen(false)
+          }}
+        >
+          <div
+            className="kiwi-link-adder"
+            onClick={(e) => {
+              e.stopPropagation()
+              if (linkAdderSearchRef.current && !linkAdderSearchRef.current.contains(document.activeElement)) {
+                setLinkAdderKiwiSearchResults([])
+              }
+            }}
+          >
+            <h2>{"Add link"}</h2>
+            <div className="option-selector">
+              <button
+                className={linkAdderMode === "external" ? "active" : ""}
+                onClick={() => setLinkAdderMode("external")}
+              >
+                {"External"}
+              </button>
+              <button className={linkAdderMode === "kiwi" ? "active" : ""} onClick={() => setLinkAdderMode("kiwi")}>
+                {"Kiwi page"}
+              </button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                if (linkAdderMode === "external" ? !linkAdderUrl : !linkAdderKiwiTarget) return
+                const url = linkAdderMode === "external" ? linkAdderUrl : linkAdderKiwiTarget
+                const text = linkAdderText.trim()
+                if (!url) return
+                const linkCode = text ? `<a ${url} | ${text} >` : `<a ${url}>`
+                insertAtCursor(linkCode)
+                setLinkAdderOpen(false)
+                setLinkAdderText("")
+              }}
+            >
+              {linkAdderMode === "external" ? (
+                <>
+                  <input
+                    type="text"
+                    name="linkURL"
+                    placeholder="URL"
+                    value={linkAdderUrl}
+                    onChange={(e) => setLinkAdderUrl(e.target.value.trim())}
+                    autoComplete="off"
+                  />
+                  <br />
+                </>
+              ) : (
+                <div className="kiwi-search" ref={linkAdderSearchRef}>
+                  <input
+                    type="text"
+                    name="linkPage"
+                    placeholder="Kiwi page title"
+                    className={`kiwi-search-input${linkAdderKiwiTarget ? " has-target" : ""}`}
+                    id="kiwi-search-input"
+                    value={linkAdderKiwiSearch}
+                    autoComplete="off"
+                    onChange={(e) => {
+                      setLinkAdderKiwiTarget("")
+                      handleLinkAdderGetSearchResults(e)
+                    }}
+                    onFocus={handleLinkAdderGetSearchResults}
+                  />
+                  {linkAdderKiwiSearchResults.length > 0 && (
+                    <div className="kiwi-search-results">
+                      {linkAdderKiwiSearchResults.map((result) => (
+                        <div key={result.fTitle} className="kiwi-search-result">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              setLinkAdderKiwiSearch(result.fTitle)
+                              setLinkAdderText(result.title)
+                              setLinkAdderKiwiTarget(result.fTitle)
+                              setLinkAdderKiwiSearchResults([])
+                            }}
+                          >
+                            {result.title}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <input
+                type="text"
+                name="linkText"
+                placeholder="Link text (optional)"
+                value={linkAdderText}
+                onChange={(e) => setLinkAdderText(e.target.value)}
+              />
+              <br />
+              <button type="submit" disabled={linkAdderMode === "external" ? !linkAdderUrl : !linkAdderKiwiTarget}>
+                {"Add"}
+              </button>
+              <button type="button" onClick={() => setLinkAdderOpen(false)}>
+                {"Cancel"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
       <form className="kiwi-edit-form" onSubmit={handleSubmit}>
         <div>
           <button type="submit">{"Save"}</button>
@@ -199,6 +367,9 @@ function KiwiEdit() {
           </button>
           <button type="button" onClick={handleOpenFileUploader}>
             {"Upload media..."}
+          </button>
+          <button type="button" onClick={handleOpenLinkAdder}>
+            {"Add link..."}
           </button>
         </div>
         <input className="title-input" type="text" value={pageContent?.title || ""} onChange={handleTitleChange} />
