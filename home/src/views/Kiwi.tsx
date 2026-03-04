@@ -24,6 +24,7 @@ function Kiwi() {
   const [newPageTitle, setNewPageTitle] = useState(f_title?.replace("_", " ") || "")
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<KiwiPageData[]>([])
+  const [pageTitle, setPageTitle] = useState(f_title?.replace("_", " ") || "")
   const searchRef = useRef<HTMLInputElement | null>(null)
   const navigate = useNavigate()
 
@@ -40,10 +41,16 @@ function Kiwi() {
         })
         const data = response.data
         setPageContent(data)
+        for (const content of data.content) {
+          if (content.type === "title" && content.depth === 1) {
+            setPageTitle(content.text)
+            break
+          }
+        }
       } catch (error) {
         if (isAxiosError(error) && error.response && error.response.status === 404) {
           setPageContent({
-            title: f_title || "",
+            title: f_title?.replace("_", " ") || "",
             fTitle: f_title || "",
             rawContent: "",
             content: [],
@@ -56,6 +63,10 @@ function Kiwi() {
     }
     fetchPageContent()
   }, [f_title])
+
+  useEffect(() => {
+    document.title = `${pageTitle} - Kiwi`
+  }, [pageTitle])
 
   useEffect(() => {
     const onKeyDown = async (e: KeyboardEvent) => {
