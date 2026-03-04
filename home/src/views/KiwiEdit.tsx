@@ -43,16 +43,38 @@ function KiwiEdit() {
         e.preventDefault()
         const file = item.getAsFile()
         if (!file) return
-        // Capture selection and current value synchronously (React event is pooled)
         const ta = e.currentTarget
         const start = ta.selectionStart ?? 0
         const end = ta.selectionEnd ?? 0
-        const prev = pageContent?.rawContent || ""
         const filename = f_title || file.name || "pasted"
         const uploaded = await uploadFile(file, filename)
         if (!uploaded) return
         const mediaCode = `<M ${uploaded}>`
-        const next = prev.slice(0, start) + mediaCode + prev.slice(end)
+
+        let next = ""
+        ta.focus()
+        try {
+          ta.setSelectionRange(start, end)
+        } catch {
+          ta.selectionStart = start
+          ta.selectionEnd = end
+        }
+
+        const insertedWithNativeUndo = document.execCommand("insertText", false, mediaCode)
+        if (insertedWithNativeUndo) {
+          next = ta.value
+        } else {
+          next = ta.value.slice(0, start) + mediaCode + ta.value.slice(end)
+          ta.value = next
+          const pos = start + mediaCode.length
+          try {
+            ta.setSelectionRange(pos, pos)
+          } catch {
+            ta.selectionStart = pos
+            ta.selectionEnd = pos
+          }
+        }
+
         setPageContent((prevState) => (prevState ? { ...prevState, rawContent: next } : prevState))
 
         requestAnimationFrame(() => {
