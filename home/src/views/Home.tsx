@@ -80,7 +80,7 @@ function Home() {
     if (searchMode) {
       const matches = quickAccessLinks.filter((l) => l.shortcuts.some((s) => s.startsWith(searchValue.toLowerCase())))
       if (matches.length === 1) {
-        window.open(matches[0].url, "_blank")
+        window.location.href = matches[0].url
         setSearchValue("")
       }
     }
