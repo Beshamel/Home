@@ -54,54 +54,13 @@ function KiwiEdit() {
         e.preventDefault()
         const file = item.getAsFile()
         if (!file) return
-        const ta = e.currentTarget
-        const start = ta.selectionStart ?? 0
-        const end = ta.selectionEnd ?? 0
         const filename = f_title || file.name || "pasted"
         const uploaded = await uploadFile(file, filename)
         if (!uploaded) return
         const mediaCode = `<M ${uploaded}>`
 
-        let next = ""
-        ta.focus()
-        try {
-          ta.setSelectionRange(start, end)
-        } catch {
-          ta.selectionStart = start
-          ta.selectionEnd = end
-        }
+        insertAtCursor(mediaCode)
 
-        const insertedWithNativeUndo = document.execCommand("insertText", false, mediaCode)
-        if (insertedWithNativeUndo) {
-          next = ta.value
-        } else {
-          next = ta.value.slice(0, start) + mediaCode + ta.value.slice(end)
-          ta.value = next
-          const pos = start + mediaCode.length
-          try {
-            ta.setSelectionRange(pos, pos)
-          } catch {
-            ta.selectionStart = pos
-            ta.selectionEnd = pos
-          }
-        }
-
-        setPageContent((prevState) => (prevState ? { ...prevState, rawContent: next } : prevState))
-
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            const ref = textareaRef.current
-            if (ref) {
-              const pos = start + mediaCode.length
-              ref.focus()
-              try {
-                ref.setSelectionRange(pos, pos)
-              } catch (err) {
-                ref.selectionStart = ref.selectionEnd = pos
-              }
-            }
-          })
-        })
         break
       }
     }
@@ -113,16 +72,39 @@ function KiwiEdit() {
     ta.focus()
     const start = ta.selectionStart ?? 0
     const end = ta.selectionEnd ?? 0
-    const next = ta.value.slice(0, start) + text + ta.value.slice(end)
-    ta.value = next
-    const pos = start + text.length
-    try {
-      ta.setSelectionRange(pos, pos)
-    } catch {
-      ta.selectionStart = pos
-      ta.selectionEnd = pos
+    let next = ""
+
+    const insertedWithNativeUndo = document.execCommand("insertText", false, text)
+    if (insertedWithNativeUndo) {
+      next = ta.value
+    } else {
+      next = ta.value.slice(0, start) + text + ta.value.slice(end)
+      ta.value = next
+      const pos = start + text.length
+      try {
+        ta.setSelectionRange(pos, pos)
+      } catch {
+        ta.selectionStart = pos
+        ta.selectionEnd = pos
+      }
     }
+
     setPageContent((prevState) => (prevState ? { ...prevState, rawContent: next } : prevState))
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const ref = textareaRef.current
+        if (ref) {
+          const pos = start + text.length
+          ref.focus()
+          try {
+            ref.setSelectionRange(pos, pos)
+          } catch (err) {
+            ref.selectionStart = ref.selectionEnd = pos
+          }
+        }
+      })
+    })
   }
 
   const handleOpenFileUploader = () => {
@@ -178,8 +160,6 @@ function KiwiEdit() {
     try {
       const res = await queryClient.post("/media", formData)
       const filename = res.data.filename
-      const mediaCode = `<M ${filename}>`
-      insertAtCursor(mediaCode)
       return filename
     } catch (error) {
       console.error("Error uploading file:", error)
@@ -226,6 +206,7 @@ function KiwiEdit() {
           <div className="kiwi-file-uploader" onClick={(e) => e.stopPropagation()}>
             <h2>{"Upload media"}</h2>
             <form
+              id="kiwi-file-upload-form"
               onSubmit={async (e) => {
                 e.preventDefault()
                 const form = e.currentTarget as HTMLFormElement
@@ -235,16 +216,26 @@ function KiwiEdit() {
                 const original = filenameInput?.value?.trim()
                 const filename = original || f_title || file?.name || "untitled"
                 if (file) {
-                  await uploadFile(file, filename)
+                  const actualFilename = await uploadFile(file, filename)
+                  if (actualFilename) {
+                    const mediaCode = `<M ${actualFilename}>`
+                    insertAtCursor(mediaCode)
+                    setFileUploaderOpen(false)
+                  } else {
+                    alert("Failed to upload file.")
+                  }
                 }
-                setFileUploaderOpen(false)
               }}
             >
-              <input type="file" name="file" /> <br />
+              <input id="kiwi-file-upload-form-file" type="file" name="file" /> <br />
               <input type="text" name="originalFilename" placeholder="Filename" />
               <br />
               <button type="submit">{"Upload"}</button>
-              <button type="button" onClick={() => setFileUploaderOpen(false)}>
+              <button
+                type="button"
+                onClick={() => setFileUploaderOpen(false)}
+                disabled={!(document.getElementById("kiwi-file-upload-form-file") as HTMLInputElement)?.files?.[0]}
+              >
                 {"Cancel"}
               </button>
             </form>
