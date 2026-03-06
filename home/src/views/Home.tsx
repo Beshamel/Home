@@ -119,7 +119,7 @@ function Home() {
         </span>
       </p>
       <form
-        className="search-form"
+        className="home-search-form"
         action="https://www.google.com/search"
         method="get"
         role="search"

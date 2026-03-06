@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react"
 import type { KiwiPageData } from "../types"
 import { useNavigate, useParams } from "react-router"
 import queryClient from "../api/client"
+import PopupMenu from "../components/PopupMenu"
 
 function KiwiEdit() {
   const { title: f_title } = useParams<{ title: string }>()
@@ -196,160 +197,144 @@ function KiwiEdit() {
 
   return (
     <div className="kiwi-page">
-      {fileUploaderOpen && (
-        <div
-          className="kiwi-file-uploader-wrapper"
-          onClick={() => {
-            setFileUploaderOpen(false)
-          }}
-        >
-          <div className="kiwi-file-uploader" onClick={(e) => e.stopPropagation()}>
-            <h2>{"Upload media"}</h2>
-            <form
-              id="kiwi-file-upload-form"
-              onSubmit={async (e) => {
-                e.preventDefault()
-                const form = e.currentTarget as HTMLFormElement
-                const fileInput = form.elements.namedItem("file") as HTMLInputElement | null
-                const filenameInput = form.elements.namedItem("originalFilename") as HTMLInputElement | null
-                const file = fileInput?.files?.[0] ?? null
-                const original = filenameInput?.value?.trim()
-                const filename = original || f_title || file?.name || "untitled"
-                if (file) {
-                  const actualFilename = await uploadFile(file, filename)
-                  if (actualFilename) {
-                    const mediaCode = `<M ${actualFilename}>`
-                    insertAtCursor(mediaCode)
-                    setFileUploaderOpen(false)
-                  } else {
-                    alert("Failed to upload file.")
-                  }
-                }
-              }}
-            >
-              <input id="kiwi-file-upload-form-file" type="file" name="file" /> <br />
-              <input type="text" name="originalFilename" placeholder="Filename" />
-              <br />
-              <button type="submit">{"Upload"}</button>
-              <button
-                type="button"
-                onClick={() => setFileUploaderOpen(false)}
-                disabled={!(document.getElementById("kiwi-file-upload-form-file") as HTMLInputElement)?.files?.[0]}
-              >
-                {"Cancel"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-      {linkAdderOpen && (
-        <div
-          className="kiwi-link-adder-wrapper"
-          onClick={() => {
-            setLinkAdderOpen(false)
-          }}
-        >
-          <div
-            className="kiwi-link-adder"
-            onClick={(e) => {
-              e.stopPropagation()
-              if (linkAdderSearchRef.current && !linkAdderSearchRef.current.contains(document.activeElement)) {
-                setLinkAdderKiwiSearchResults([])
+      <PopupMenu open={fileUploaderOpen} onClose={() => setFileUploaderOpen(false)}>
+        <h2>{"Upload media"}</h2>
+        <form
+          id="kiwi-file-upload-form"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            const form = e.currentTarget as HTMLFormElement
+            const fileInput = form.elements.namedItem("file") as HTMLInputElement | null
+            const filenameInput = form.elements.namedItem("originalFilename") as HTMLInputElement | null
+            const file = fileInput?.files?.[0] ?? null
+            const original = filenameInput?.value?.trim()
+            const filename = original || f_title || file?.name || "untitled"
+            if (file) {
+              const filename_ = await uploadFile(file, filename)
+              if (filename_) {
+                const captionInput = form.elements.namedItem("caption") as HTMLInputElement | null
+                const caption = captionInput?.value?.trim()
+                const mediaCode = caption ? `<M ${caption} : ${filename_}>` : `<M ${filename_}>`
+                insertAtCursor(mediaCode)
+                setFileUploaderOpen(false)
+              } else {
+                alert("Failed to upload file.")
               }
-            }}
+            }
+          }}
+        >
+          <input id="kiwi-file-upload-form-file" type="file" name="file" /> <br />
+          <input type="text" name="originalFilename" placeholder="Filename (optional)" />
+          <br />
+          <input type="text" name="caption" placeholder="Caption (optional)" />
+          <br />
+          <button
+            type="submit"
+            disabled={!(document.getElementById("kiwi-file-upload-form-file") as HTMLInputElement)?.files?.[0]}
           >
-            <h2>{"Add link"}</h2>
-            <div className="option-selector">
-              <button
-                className={linkAdderMode === "external" ? "active" : ""}
-                onClick={() => setLinkAdderMode("external")}
-              >
-                {"External"}
-              </button>
-              <button className={linkAdderMode === "kiwi" ? "active" : ""} onClick={() => setLinkAdderMode("kiwi")}>
-                {"Kiwi page"}
-              </button>
-            </div>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault()
-                if (linkAdderMode === "external" ? !linkAdderUrl : !linkAdderKiwiTarget) return
-                const url = linkAdderMode === "external" ? linkAdderUrl : linkAdderKiwiTarget
-                const text = linkAdderText.trim()
-                if (!url) return
-                const linkCode = text ? `<a ${url} | ${text} >` : `<a ${url}>`
-                insertAtCursor(linkCode)
-                setLinkAdderOpen(false)
-                setLinkAdderText("")
-              }}
-            >
-              {linkAdderMode === "external" ? (
-                <>
-                  <input
-                    type="text"
-                    name="linkURL"
-                    placeholder="URL"
-                    value={linkAdderUrl}
-                    onChange={(e) => setLinkAdderUrl(e.target.value.trim())}
-                    autoComplete="off"
-                  />
-                  <br />
-                </>
-              ) : (
-                <div className="kiwi-search" ref={linkAdderSearchRef}>
-                  <input
-                    type="text"
-                    name="linkPage"
-                    placeholder="Kiwi page title"
-                    className={`kiwi-search-input${linkAdderKiwiTarget ? " has-target" : ""}`}
-                    id="kiwi-search-input"
-                    value={linkAdderKiwiSearch}
-                    autoComplete="off"
-                    onChange={(e) => {
-                      setLinkAdderKiwiTarget("")
-                      handleLinkAdderGetSearchResults(e)
-                    }}
-                    onFocus={handleLinkAdderGetSearchResults}
-                  />
-                  {linkAdderKiwiSearchResults.length > 0 && (
-                    <div className="kiwi-search-results">
-                      {linkAdderKiwiSearchResults.map((result) => (
-                        <div key={result.fTitle} className="kiwi-search-result">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              setLinkAdderKiwiSearch(result.fTitle)
-                              setLinkAdderText(result.title)
-                              setLinkAdderKiwiTarget(result.fTitle)
-                              setLinkAdderKiwiSearchResults([])
-                            }}
-                          >
-                            {result.title}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+            {"Upload"}
+          </button>
+          <button type="button" onClick={() => setFileUploaderOpen(false)}>
+            {"Cancel"}
+          </button>
+        </form>
+      </PopupMenu>
+      <PopupMenu
+        open={linkAdderOpen}
+        onClose={() => setLinkAdderOpen(false)}
+        onClick={() => {
+          if (linkAdderSearchRef.current && !linkAdderSearchRef.current.contains(document.activeElement)) {
+            setLinkAdderKiwiSearchResults([])
+          }
+        }}
+      >
+        <h2>{"Add link"}</h2>
+        <div className="option-selector">
+          <button className={linkAdderMode === "external" ? "active" : ""} onClick={() => setLinkAdderMode("external")}>
+            {"External"}
+          </button>
+          <button className={linkAdderMode === "kiwi" ? "active" : ""} onClick={() => setLinkAdderMode("kiwi")}>
+            {"Kiwi page"}
+          </button>
+        </div>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault()
+            if (linkAdderMode === "external" ? !linkAdderUrl : !linkAdderKiwiTarget) return
+            const url = linkAdderMode === "external" ? linkAdderUrl : linkAdderKiwiTarget
+            const text = linkAdderText.trim()
+            if (!url) return
+            const linkCode = text ? `<a ${url} | ${text} >` : `<a ${url}>`
+            insertAtCursor(linkCode)
+            setLinkAdderOpen(false)
+            setLinkAdderText("")
+          }}
+        >
+          {linkAdderMode === "external" ? (
+            <>
               <input
                 type="text"
-                name="linkText"
-                placeholder="Link text (optional)"
-                value={linkAdderText}
-                onChange={(e) => setLinkAdderText(e.target.value)}
+                name="linkURL"
+                placeholder="URL"
+                value={linkAdderUrl}
+                onChange={(e) => setLinkAdderUrl(e.target.value.trim())}
+                autoComplete="off"
               />
               <br />
-              <button type="submit" disabled={linkAdderMode === "external" ? !linkAdderUrl : !linkAdderKiwiTarget}>
-                {"Add"}
-              </button>
-              <button type="button" onClick={() => setLinkAdderOpen(false)}>
-                {"Cancel"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+            </>
+          ) : (
+            <div className="kiwi-search" ref={linkAdderSearchRef}>
+              <input
+                type="text"
+                name="linkPage"
+                placeholder="Kiwi page title"
+                className={`kiwi-search-input${linkAdderKiwiTarget ? " has-target" : ""}`}
+                id="kiwi-search-input"
+                value={linkAdderKiwiSearch}
+                autoComplete="off"
+                onChange={(e) => {
+                  setLinkAdderKiwiTarget("")
+                  handleLinkAdderGetSearchResults(e)
+                }}
+                onFocus={handleLinkAdderGetSearchResults}
+              />
+              {linkAdderKiwiSearchResults.length > 0 && (
+                <div className="kiwi-search-results">
+                  {linkAdderKiwiSearchResults.map((result) => (
+                    <div key={result.fTitle} className="kiwi-search-result">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          setLinkAdderKiwiSearch(result.fTitle)
+                          setLinkAdderText(result.title)
+                          setLinkAdderKiwiTarget(result.fTitle)
+                          setLinkAdderKiwiSearchResults([])
+                        }}
+                      >
+                        {result.title}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <input
+            type="text"
+            name="linkText"
+            placeholder="Link text (optional)"
+            value={linkAdderText}
+            onChange={(e) => setLinkAdderText(e.target.value)}
+          />
+          <br />
+          <button type="submit" disabled={linkAdderMode === "external" ? !linkAdderUrl : !linkAdderKiwiTarget}>
+            {"Add"}
+          </button>
+          <button type="button" onClick={() => setLinkAdderOpen(false)}>
+            {"Cancel"}
+          </button>
+        </form>
+      </PopupMenu>
       <form className="kiwi-edit-form" onSubmit={handleSubmit}>
         <div>
           <button type="submit">{"Save"}</button>

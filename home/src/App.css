@@ -4,6 +4,11 @@
   margin: 0;
 }
 
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
 .home-page {
   height: 100vh;
   display: flex;
@@ -12,11 +17,6 @@
   justify-content: center;
   text-align: center;
   gap: 1.5rem;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
 }
 
 .home-clock {
@@ -57,7 +57,7 @@ h1 {
   margin-top: 0.25rem;
 }
 
-.search-form {
+.home-search-form {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -65,7 +65,7 @@ h1 {
   justify-content: center;
 }
 
-.search-form input {
+.home-search-form input {
   min-width: 260px;
   max-width: 520px;
   width: min(70vw, 520px);
@@ -77,12 +77,12 @@ h1 {
   outline: none;
 }
 
-.search-form input:focus {
+.home-search-form input:focus {
   border-color: #646cff;
   box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.25);
 }
 
-.search-form input.quick-access-mode:focus {
+.home-search-form input.quick-access-mode:focus {
   border-color: #f764ff;
   box-shadow: 0 0 0 3px rgba(242, 100, 255, 0.25);
 }
@@ -269,26 +269,6 @@ h1 {
   resize: vertical;
 }
 
-.kiwi-file-uploader-wrapper,
-.kiwi-link-adder-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.kiwi-file-uploader,
-.kiwi-link-adder {
-  background-color: #1f1f1f;
-  padding: 2rem;
-  border-radius: 8px;
-}
-
 .kiwi-file-uploader h2,
 .kiwi-link-adder h2 {
   margin-top: 0;
@@ -319,6 +299,7 @@ h1 {
 
 .kiwi-search-result {
   background-color: #2b2b2b;
+  overflow: hidden;
 }
 
 .kiwi-search-result:first-child {
@@ -375,4 +356,24 @@ h1 {
 .option-selector button:last-child {
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
+}
+
+.popup-menu-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popup-menu {
+  position: relative;
+  background-color: #1f1f1f;
+  padding: 2rem;
+  border-radius: 8px;
 }
