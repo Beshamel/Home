@@ -16,15 +16,20 @@ import queryClient, { API_BASE_URL } from "../api/client"
 import { isAxiosError } from "axios"
 import "katex/dist/katex.min.css"
 import Latex from "react-latex-next"
+import PopupMenu from "../components/PopupMenu"
 
 function Kiwi() {
   const { title: f_title } = useParams<{ title: string }>()
   const [pageContent, setPageContent] = useState<KiwiPageData | null>(null)
+  const [pageTitle, setPageTitle] = useState(f_title?.replace("_", " ") || "")
+
   const [newPage, setNewPage] = useState(false)
   const [newPageTitle, setNewPageTitle] = useState(f_title?.replace("_", " ") || "")
+  const [newPageMenuOpen, setNewPageMenuOpen] = useState(false)
+
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<KiwiPageData[]>([])
-  const [pageTitle, setPageTitle] = useState(f_title?.replace("_", " ") || "")
+
   const searchWrapperRef = useRef<HTMLDivElement | null>(null)
   const searchRef = useRef<HTMLInputElement | null>(null)
   const navigate = useNavigate()
@@ -45,6 +50,7 @@ function Kiwi() {
         for (const content of data.content) {
           if (content.type === "title" && content.depth === 1) {
             setPageTitle(content.text)
+            setNewPageTitle("")
             break
           }
         }
@@ -73,6 +79,13 @@ function Kiwi() {
     const onKeyDown = async (e: KeyboardEvent) => {
       const searchFocused = searchRef.current?.contains(document.activeElement)
       const key = e.key?.toLowerCase()
+      if (newPageMenuOpen) {
+        if (key === "escape") {
+          e.preventDefault()
+          setNewPageMenuOpen(false)
+        }
+        return
+      }
       if (key === "e" && !newPage && !searchFocused) {
         e.preventDefault()
         handleEditPage()
@@ -84,18 +97,18 @@ function Kiwi() {
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [f_title])
+  }, [f_title, newPageMenuOpen, newPage, searchRef])
 
   const handleCreatePage = async (e: React.SubmitEvent) => {
     e.preventDefault()
     try {
-      await queryClient.post("/kiwi", null, {
+      const page = await queryClient.post<KiwiPageData>("/kiwi", null, {
         params: {
           title: newPageTitle,
           raw_content: `# ${newPageTitle}\n\n`,
         },
       })
-      handleEditPage()
+      navigate(`/kiwi/${page.data.fTitle}/edit`)
     } catch (error) {
       console.error("Error creating page:", error)
       alert("Failed to create page.")
@@ -131,77 +144,95 @@ function Kiwi() {
   }
 
   return (
-    <>
-      <div
-        className="kiwi-page"
-        onClick={(e) => {
-          e.stopPropagation()
-          if (searchWrapperRef.current && !searchWrapperRef.current.contains(document.activeElement)) {
-            setSearchResults([])
-          }
-        }}
-      >
-        <div className="kiwi-sidebar">
-          {pageContent && <div className="kiwi-toc">{renderTableOfContents(pageContent)}</div>}
-        </div>
-        <main className="kiwi-main">
-          <header className="kiwi-header">
-            <button onClick={handleGoHome}>{"Home"}</button>
-            {!newPage && <button onClick={handleEditPage}>{"Edit"}</button>}
-            <div className="kiwi-search" ref={searchWrapperRef}>
-              <input
-                className="kiwi-search-input"
-                id="kiwi-search-input"
-                type="text"
-                placeholder="Search..."
-                ref={searchRef}
-                value={searchQuery}
-                onChange={handleGetSearchResults}
-                onFocus={handleGetSearchResults}
-              />
-              {searchResults.length > 0 && (
-                <div className="kiwi-search-results">
-                  {searchResults.map((result) => (
-                    <div key={result.fTitle} className="kiwi-search-result">
-                      <button
-                        onClick={() => {
-                          navigate(`/kiwi/${result.fTitle}`)
-                          setSearchQuery("")
-                          setSearchResults([])
-                        }}
-                      >
-                        {result.title}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </header>
-          {newPage ? (
-            <>
-              <p>{"This page does not exist yet. You can create it here."}</p>
-              <form className="kiwi-create-form" onSubmit={handleCreatePage}>
-                {"Title : "}
-                <input
-                  className="title-input"
-                  type="text"
-                  value={newPageTitle}
-                  onChange={(e) => {
-                    setNewPageTitle(e.target.value)
-                  }}
-                />
-                <button type="submit">{"Create"}</button>
-              </form>
-            </>
-          ) : pageContent ? (
-            renderContent(pageContent)
-          ) : (
-            <p>Loading...</p>
-          )}
-        </main>
+    <div
+      className="kiwi-page"
+      onClick={(e) => {
+        e.stopPropagation()
+        if (searchWrapperRef.current && !searchWrapperRef.current.contains(document.activeElement)) {
+          setSearchResults([])
+        }
+      }}
+    >
+      <PopupMenu open={newPageMenuOpen} onClose={() => setNewPageMenuOpen(false)}>
+        <h2>{"Create New Page"}</h2>
+        <form className="kiwi-create-form" onSubmit={handleCreatePage}>
+          <input
+            className="title-input"
+            type="text"
+            value={newPageTitle}
+            onChange={(e) => {
+              setNewPageTitle(e.target.value)
+            }}
+          />
+          <br />
+          <button type="submit">{"Submit"}</button>
+        </form>
+      </PopupMenu>
+      <div className="kiwi-sidebar">
+        {pageContent && <div className="kiwi-toc">{renderTableOfContents(pageContent)}</div>}
       </div>
-    </>
+      <main className="kiwi-main">
+        <header className="kiwi-header">
+          <button onClick={handleGoHome}>{"Home"}</button>
+          {!newPage && (
+            <>
+              <button onClick={handleEditPage}>{"Edit"}</button>
+              <button onClick={() => setNewPageMenuOpen((open) => !open)}>{"New Page"}</button>
+            </>
+          )}
+          <div className="kiwi-search" ref={searchWrapperRef}>
+            <input
+              className="kiwi-search-input"
+              id="kiwi-search-input"
+              type="text"
+              placeholder="Search..."
+              ref={searchRef}
+              value={searchQuery}
+              onChange={handleGetSearchResults}
+              onFocus={handleGetSearchResults}
+            />
+            {searchResults.length > 0 && (
+              <div className="kiwi-search-results">
+                {searchResults.map((result) => (
+                  <div key={result.fTitle} className="kiwi-search-result">
+                    <button
+                      onClick={() => {
+                        navigate(`/kiwi/${result.fTitle}`)
+                        setSearchQuery("")
+                        setSearchResults([])
+                      }}
+                    >
+                      {result.title}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </header>
+        {newPage ? (
+          <>
+            <p>{"This page does not exist yet. You can create it here."}</p>
+            <form className="kiwi-create-form" onSubmit={handleCreatePage}>
+              {"Title : "}
+              <input
+                className="title-input"
+                type="text"
+                value={newPageTitle}
+                onChange={(e) => {
+                  setNewPageTitle(e.target.value)
+                }}
+              />
+              <button type="submit">{"Create"}</button>
+            </form>
+          </>
+        ) : pageContent ? (
+          renderContent(pageContent)
+        ) : (
+          <p>Loading...</p>
+        )}
+      </main>
+    </div>
   )
 }
 
