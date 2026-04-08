@@ -17,6 +17,7 @@ import { isAxiosError } from "axios"
 import "katex/dist/katex.min.css"
 import Latex from "react-latex-next"
 import PopupMenu from "../components/PopupMenu"
+import { SearchBar } from "../components/Kiwi"
 
 function Kiwi() {
   const { title: f_title } = useParams<{ title: string }>()
@@ -27,10 +28,7 @@ function Kiwi() {
   const [newPageTitle, setNewPageTitle] = useState(f_title?.replace("_", " ") || "")
   const [newPageMenuOpen, setNewPageMenuOpen] = useState(false)
 
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<KiwiPageData[]>([])
-
-  const searchWrapperRef = useRef<HTMLDivElement | null>(null)
+  const [searchShowResults, setSearchShowResults] = useState(false)
   const searchRef = useRef<HTMLInputElement | null>(null)
   const navigate = useNavigate()
 
@@ -123,33 +121,13 @@ function Kiwi() {
     navigate(`/kiwi/${f_title}/edit`)
   }
 
-  const handleGetSearchResults = async (
-    e: React.ChangeEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>,
-  ) => {
-    setSearchQuery(e.target.value)
-    const search = e.currentTarget.value.trim()
-    if (search.trim() === "") {
-      setSearchResults([])
-      return
-    }
-    try {
-      const res = await queryClient.get<KiwiPageData[]>("/kiwi/search", {
-        params: { query: search.trim(), limit: 5 },
-      })
-      setSearchResults(res.data)
-    } catch (err) {
-      setSearchResults([])
-      console.error("Error searching Kiwi pages:", err)
-    }
-  }
-
   return (
     <div
       className="kiwi-page"
       onClick={(e) => {
         e.stopPropagation()
-        if (searchWrapperRef.current && !searchWrapperRef.current.contains(document.activeElement)) {
-          setSearchResults([])
+        if (searchRef.current && !searchRef.current.contains(document.activeElement)) {
+          setSearchShowResults(false)
         }
       }}
     >
@@ -180,35 +158,12 @@ function Kiwi() {
               <button onClick={() => setNewPageMenuOpen((open) => !open)}>{"New Page"}</button>
             </>
           )}
-          <div className="kiwi-search" ref={searchWrapperRef}>
-            <input
-              className="kiwi-search-input"
-              id="kiwi-search-input"
-              type="text"
-              placeholder="Search..."
-              ref={searchRef}
-              value={searchQuery}
-              onChange={handleGetSearchResults}
-              onFocus={handleGetSearchResults}
-            />
-            {searchResults.length > 0 && (
-              <div className="kiwi-search-results">
-                {searchResults.map((result) => (
-                  <div key={result.fTitle} className="kiwi-search-result">
-                    <button
-                      onClick={() => {
-                        navigate(`/kiwi/${result.fTitle}`)
-                        setSearchQuery("")
-                        setSearchResults([])
-                      }}
-                    >
-                      {result.title}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <SearchBar
+            onPick={(result) => navigate(`/kiwi/${result.fTitle}`)}
+            searchRef={searchRef}
+            hideResults={!searchShowResults}
+            onFocus={() => setSearchShowResults(true)}
+          />
         </header>
         {newPage ? (
           <>

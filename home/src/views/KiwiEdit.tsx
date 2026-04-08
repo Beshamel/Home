@@ -3,6 +3,7 @@ import type { KiwiPageData } from "../types"
 import { useNavigate, useParams } from "react-router"
 import queryClient from "../api/client"
 import PopupMenu from "../components/PopupMenu"
+import { SearchBar } from "../components/Kiwi"
 
 function KiwiEdit() {
   const { title: f_title } = useParams<{ title: string }>()
@@ -17,8 +18,7 @@ function KiwiEdit() {
   const [linkAdderUrl, setLinkAdderUrl] = useState("")
   const [linkAdderText, setLinkAdderText] = useState("")
   const [linkAdderKiwiTarget, setLinkAdderKiwiTarget] = useState("")
-  const [linkAdderKiwiSearch, setLinkAdderKiwiSearch] = useState("")
-  const [linkAdderKiwiSearchResults, setLinkAdderKiwiSearchResults] = useState<KiwiPageData[]>([])
+  const [linkAdderShowResults, setLinkAdderShowResults] = useState(false)
   const linkAdderSearchRef = useRef<HTMLDivElement | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -116,25 +116,6 @@ function KiwiEdit() {
   const handleOpenLinkAdder = () => {
     setFileUploaderOpen(false)
     setLinkAdderOpen(true)
-  }
-
-  const handleLinkAdderGetSearchResults = async (
-    e: React.ChangeEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>,
-  ) => {
-    setLinkAdderKiwiSearch(e.currentTarget.value)
-    const search = e.currentTarget.value.trim()
-    if (!search.trim()) {
-      setLinkAdderKiwiSearchResults([])
-      return
-    }
-    try {
-      const res = await queryClient.get<KiwiPageData[]>("/kiwi/search", {
-        params: { query: search.trim(), limit: 5 },
-      })
-      setLinkAdderKiwiSearchResults(res.data)
-    } catch (err) {
-      console.error("Error searching Kiwi pages:", err)
-    }
   }
 
   const savePage = async () => {
@@ -244,7 +225,7 @@ function KiwiEdit() {
         onClose={() => setLinkAdderOpen(false)}
         onClick={() => {
           if (linkAdderSearchRef.current && !linkAdderSearchRef.current.contains(document.activeElement)) {
-            setLinkAdderKiwiSearchResults([])
+            setLinkAdderShowResults(false)
           }
         }}
       >
@@ -283,41 +264,17 @@ function KiwiEdit() {
               <br />
             </>
           ) : (
-            <div className="kiwi-search" ref={linkAdderSearchRef}>
-              <input
-                type="text"
-                name="linkPage"
-                placeholder="Kiwi page title"
-                className={`kiwi-search-input${linkAdderKiwiTarget ? " has-target" : ""}`}
-                id="kiwi-search-input"
-                value={linkAdderKiwiSearch}
-                autoComplete="off"
-                onChange={(e) => {
-                  setLinkAdderKiwiTarget("")
-                  handleLinkAdderGetSearchResults(e)
-                }}
-                onFocus={handleLinkAdderGetSearchResults}
-              />
-              {linkAdderKiwiSearchResults.length > 0 && (
-                <div className="kiwi-search-results">
-                  {linkAdderKiwiSearchResults.map((result) => (
-                    <div key={result.fTitle} className="kiwi-search-result">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          setLinkAdderKiwiSearch(result.fTitle)
-                          setLinkAdderText(result.title)
-                          setLinkAdderKiwiTarget(result.fTitle)
-                          setLinkAdderKiwiSearchResults([])
-                        }}
-                      >
-                        {result.title}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <SearchBar
+              searchRef={linkAdderSearchRef}
+              onPick={(result) => {
+                setLinkAdderText(result.title)
+                setLinkAdderKiwiTarget(result.fTitle)
+              }}
+              onFocus={() => setLinkAdderShowResults(true)}
+              hideResults={!linkAdderShowResults}
+              setTargetOnPick
+              setToFTitleOnPick
+            />
           )}
           <input
             type="text"
@@ -362,3 +319,39 @@ function KiwiEdit() {
 }
 
 export default KiwiEdit
+
+/*<div className="kiwi-search" ref={linkAdderSearchRef}>
+              <input
+                type="text"
+                name="linkPage"
+                placeholder="Search kiwi..."
+                className={`kiwi-search-input${linkAdderKiwiTarget ? " has-target" : ""}`}
+                id="kiwi-search-input"
+                value={linkAdderKiwiSearch}
+                autoComplete="off"
+                onChange={(e) => {
+                  setLinkAdderKiwiTarget("")
+                  handleLinkAdderGetSearchResults(e)
+                }}
+                onFocus={handleLinkAdderGetSearchResults}
+              />
+              {linkAdderKiwiSearchResults.length > 0 && (
+                <div className="kiwi-search-results">
+                  {linkAdderKiwiSearchResults.map((result) => (
+                    <div key={result.fTitle} className="kiwi-search-result">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          setLinkAdderKiwiSearch(result.fTitle)
+                          setLinkAdderText(result.title)
+                          setLinkAdderKiwiTarget(result.fTitle)
+                          setLinkAdderKiwiSearchResults([])
+                        }}
+                      >
+                        {result.title}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>*/

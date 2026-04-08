@@ -5,6 +5,7 @@ import Home from "./views/Home"
 import Kiwi from "./views/Kiwi"
 import KiwiEdit from "./views/KiwiEdit"
 import HomeSettings from "./views/HomeSettings"
+import KiwiHome from "./views/KiwiHome"
 
 function App() {
   return (
@@ -12,7 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/settings" element={<HomeSettings />} />
-        <Route path="/kiwi" element={<Navigate to="/kiwi/Kiwi" />} />
+        <Route path="/kiwi" element={<KiwiHome />} />
         <Route path="/kiwi/:title" element={<Kiwi />} />
         <Route path="/kiwi/:title/edit" element={<KiwiEdit />} />
         <Route path="*" element={<Navigate to="/" />} />

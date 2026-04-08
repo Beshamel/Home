@@ -57,6 +57,9 @@ def parse_kiwi_data(raw_content: str) -> t.List[Title | Paragraph]:
             b = a
         if b >= len(raw_content):
             break
+        if raw_content[b] == "\\":
+            b += 1
+            continue
         if raw_content[b] == "\n" and raw_content[a] == "#":
             parsed.append(parse_title(raw_content[a:b], title_ids))
             a = b
@@ -223,12 +226,20 @@ def parse_inline(
         if b >= len(raw_chunks):
             if b - a > 0:
                 parsed.append(
-                    TextChunk(type="text", text=raw_chunks[a : len(raw_chunks)])
+                    TextChunk(
+                        type="text",
+                        text=remove_escapes(raw_chunks[a : len(raw_chunks)]),
+                    )
                 )
             break
+        if raw_chunks[b] == "\\":
+            b += 2
+            continue
         if raw_chunks[b : b + 2] in format_markers:
             if b - a > 0:
-                parsed.append(TextChunk(type="text", text=raw_chunks[a:b]))
+                parsed.append(
+                    TextChunk(type="text", text=remove_escapes(raw_chunks[a:b]))
+                )
             a = b
             b += 2
             depth = 1
@@ -253,7 +264,9 @@ def parse_inline(
             continue
         if raw_chunks[b : b + 2] == "<a":
             if b - a > 0:
-                parsed.append(TextChunk(type="text", text=raw_chunks[a:b]))
+                parsed.append(
+                    TextChunk(type="text", text=remove_escapes(raw_chunks[a:b]))
+                )
             a = b
             while b < len(raw_chunks) and not (raw_chunks[b] == ">"):
                 b += 1
@@ -263,6 +276,28 @@ def parse_inline(
             continue
         b += 1
     return parsed
+
+
+def remove_escapes(raw_content: str) -> str:
+    result = ""
+    i = 0
+    latex = "out"
+    while i < len(raw_content):
+        if raw_content[i : i + 2] == "$$" and latex != "inline":
+            latex = "fullline" if latex == "out" else "out"
+            i += 2
+            continue
+        if raw_content[i : i + 1] == "$" and latex != "fullline":
+            latex = "inline" if latex == "out" else "out"
+            i += 1
+            continue
+        if raw_content[i] == "\\" and i + 1 < len(raw_content) and latex == "out":
+            result += raw_content[i + 1]
+            i += 2
+        else:
+            result += raw_content[i]
+            i += 1
+    return result
 
 
 def parse_link(raw_chunk: str) -> LinkChunk:
