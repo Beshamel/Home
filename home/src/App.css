@@ -114,6 +114,13 @@ h1 {
   background-color: #3d3d3d;
 }
 
+.kiwi-page *:focus,
+.kiwi-home-page *:focus {
+  outline: none;
+  border-color: rgb(67, 255, 117);
+  box-shadow: 0 0 0 3px rgba(67, 255, 117, 0.25);
+}
+
 .kiwi-page {
   background-color: #1f1f1f;
   display: flex;
@@ -123,7 +130,7 @@ h1 {
 .kiwi-page button {
   background-color: #2b2b2b;
   color: inherit;
-  border: none;
+  border: 1px solid transparent;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   cursor: pointer;
@@ -144,7 +151,7 @@ h1 {
 .kiwi-page input {
   background-color: #2b2b2b;
   color: inherit;
-  border: none;
+  border: 1px solid transparent;
   padding: 0.5rem 1rem;
   border-radius: 8px;
 }
@@ -284,7 +291,6 @@ h1 {
   width: 100%;
   background-color: #2b2b2b;
   color: inherit;
-  border: none;
   padding: 0.5rem 1rem;
   font-size: large;
 }
@@ -398,7 +404,7 @@ h1 {
   width: 100%;
   height: 100%;
   background: none;
-  border: none;
+  border: 1px solid transparent;
   color: inherit;
   padding: 0.5rem 1rem;
   margin: 0;
@@ -416,7 +422,7 @@ h1 {
 .option-selector button {
   background-color: #2b2b2b;
   color: inherit;
-  border: none;
+  border: 1px solid transparent;
   padding: 0.5rem 1rem;
   margin: 0;
   border-radius: 0px;
@@ -428,7 +434,7 @@ h1 {
 }
 
 .option-selector button.active {
-  background-color: #646cff;
+  background-color: rgb(51, 208, 92);
 }
 
 .option-selector button:first-child {

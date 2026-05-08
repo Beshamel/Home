@@ -12,6 +12,7 @@ function KiwiEdit() {
   const [pageContent, setPageContent] = useState<KiwiPageData | null>(null)
 
   const [fileUploaderOpen, setFileUploaderOpen] = useState(false)
+  const [fileUploaderSubmitDisabled, setFileUploaderSubmitDisabled] = useState(true)
 
   const [linkAdderOpen, setLinkAdderOpen] = useState(false)
   const [linkAdderMode, setLinkAdderMode] = useState<"external" | "kiwi">("external")
@@ -204,15 +205,18 @@ function KiwiEdit() {
             }
           }}
         >
-          <input id="kiwi-file-upload-form-file" type="file" name="file" /> <br />
+          <input
+            id="kiwi-file-upload-form-file"
+            type="file"
+            name="file"
+            onChange={(e) => setFileUploaderSubmitDisabled(!e.target.files?.length)}
+          />
+          <br />
           <input type="text" name="originalFilename" placeholder="Filename (optional)" />
           <br />
           <input type="text" name="caption" placeholder="Caption (optional)" />
           <br />
-          <button
-            type="submit"
-            disabled={!(document.getElementById("kiwi-file-upload-form-file") as HTMLInputElement)?.files?.[0]}
-          >
+          <button type="submit" disabled={fileUploaderSubmitDisabled}>
             {"Upload"}
           </button>
           <button type="button" onClick={() => setFileUploaderOpen(false)}>
