@@ -211,7 +211,8 @@ function Home() {
           if (searchMode === 2) {
             e.preventDefault()
             if (kiwiSuggestions.length) {
-              const suggestion = kiwiSuggestions[0]
+              const index = Math.max(suggestionIndex, 0)
+              const suggestion = kiwiSuggestions[index]
               setSearchValue(suggestion.title)
               navigate(`kiwi/${suggestion.fTitle}`)
             }
