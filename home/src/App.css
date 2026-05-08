@@ -78,8 +78,8 @@ h1 {
 }
 
 .home-search-form input.google-search-mode:focus {
-  border-color: #646cff;
-  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.25);
+  border-color: rgb(100, 185, 255);
+  box-shadow: 0 0 0 3px rgba(100, 185, 255, 0.25);
 }
 
 .home-search-form input.quick-access-mode:focus {
@@ -88,8 +88,8 @@ h1 {
 }
 
 .home-search-form input.kiwi-search-mode:focus {
-  border-color: #64ffda;
-  box-shadow: 0 0 0 3px rgba(100, 255, 218, 0.25);
+  border-color: rgb(67, 255, 117);
+  box-shadow: 0 0 0 3px rgba(67, 255, 117, 0.25);
 }
 
 .google-suggestions,
@@ -253,6 +253,15 @@ h1 {
   background-color: #1f1f1f;
 }
 
+.kiwi-home-container {
+  max-width: 100%;
+  min-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 #kiwi-home-page-title {
   text-align: center;
   border-bottom: none;
@@ -260,20 +269,28 @@ h1 {
   font-size: 7rem;
   font-family: 'Times New Roman', Times, serif;
   font-weight: bold;
+  user-select: none;
 }
 
-.kiwi-home-page .kiwi-search {
-  min-width: 50%;
+.kiwi-main.home .kiwi-search {
+  box-sizing: border-box;
+  padding: .25rem;
+  min-width: 100%;
 }
 
-.kiwi-home-page input {
-  height: 3rem;
-  width: calc(100% - 2rem);
+.kiwi-main.home .kiwi-search-input {
+  height: 4rem;
+  box-sizing: border-box;
+  width: 100%;
   background-color: #2b2b2b;
   color: inherit;
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  font-size: large;
+}
+
+.kiwi-main.home button {
+  align-self: flex-start;
 }
 
 .kiwi-main header {
