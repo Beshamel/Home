@@ -59,8 +59,8 @@ h1 {
 
 .home-search-form {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -77,7 +77,7 @@ h1 {
   outline: none;
 }
 
-.home-search-form input:focus {
+.home-search-form input.google-search-mode:focus {
   border-color: #646cff;
   box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.25);
 }
@@ -85,6 +85,33 @@ h1 {
 .home-search-form input.quick-access-mode:focus {
   border-color: #f764ff;
   box-shadow: 0 0 0 3px rgba(242, 100, 255, 0.25);
+}
+
+.home-search-form input.kiwi-search-mode:focus {
+  border-color: #64ffda;
+  box-shadow: 0 0 0 3px rgba(100, 255, 218, 0.25);
+}
+
+.google-suggestions,
+.kiwi-suggestions {
+  width: min(70vw, 520px);
+  height: 0px;
+  overflow: visible;
+
+}
+
+.google-suggestion,
+.kiwi-suggestion {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.google-suggestion:hover,
+.google-suggestion.selected,
+.kiwi-suggestion:hover,
+.kiwi-suggestion.selected {
+  background-color: #3d3d3d;
 }
 
 .kiwi-page {

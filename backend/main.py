@@ -5,6 +5,7 @@ import uvicorn
 from app.routers import quick_access
 from app.routers import kiwi
 from app.routers import media
+from app.routers import google
 
 app = FastAPI()
 
@@ -19,6 +20,7 @@ app.add_middleware(
 app.include_router(quick_access.router)
 app.include_router(kiwi.router)
 app.include_router(media.router)
+app.include_router(google.router)
 
 
 @app.get("/")
