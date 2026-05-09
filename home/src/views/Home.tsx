@@ -3,6 +3,7 @@ import type { KiwiPageData, QuickAccessLink } from "../types"
 import queryClient from "../api/client"
 import { LocalTimeMode, LocalUTC, LocalDisplaySeconds } from "../api/localStorage"
 import { useNavigate } from "react-router"
+import { evaluateString } from "../calc"
 
 const maxSuggestions = 5
 
@@ -22,6 +23,8 @@ function Home() {
 
   const [quickAccessLinks, setQuickAccessLinks] = useState<QuickAccessLink[]>([])
   const [quickAccessRouting, setQuickAccessRouting] = useState(false)
+
+  const [calcValue, setCalcValue] = useState(NaN)
 
   const [timeFormat, setTimeFormat] = useState<string>(LocalTimeMode.get()!)
   const [timeUTC, setTimeUTC] = useState(LocalUTC.get() === "true")
@@ -54,6 +57,11 @@ function Home() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "=" && searchValue.trim() === "") {
+        e.preventDefault()
+        setSearchMode(3)
+        searchRef.current?.focus()
+      }
       if (searchRef.current?.contains(document.activeElement)) {
         if (e.key === "Escape") {
           searchRef.current.blur()
@@ -116,7 +124,7 @@ function Home() {
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [timeUTC, timeFormat, displaySeconds, searchMode, googleSuggestions, kiwiSuggestions])
+  }, [timeUTC, timeFormat, displaySeconds, searchMode, googleSuggestions, kiwiSuggestions, searchValue])
 
   useEffect(() => {
     if (quickAccessRouting) return
@@ -161,6 +169,10 @@ function Home() {
         .catch((e) => {
           console.error("Failed to search Kiwi", e)
         })
+    }
+    if (searchMode === 3) {
+      if (searchValue.trim().length) setCalcValue(evaluateString(searchValue.trim()))
+      else setCalcValue(NaN)
     }
   }, [searchValue, searchMode])
 
@@ -226,13 +238,31 @@ function Home() {
           id="q"
           className={
             "search-input" +
-            (searchMode === 0 ? " quick-access-mode" : searchMode === 1 ? " google-search-mode" : " kiwi-search-mode")
+            (searchMode === 0
+              ? " quick-access-mode"
+              : searchMode === 1
+                ? " google-search-mode"
+                : searchMode === 2
+                  ? " kiwi-search-mode"
+                  : " calc-mode")
           }
           name="q"
           type="text"
-          placeholder={searchMode === 0 ? "Quick access..." : searchMode === 1 ? "Search Google..." : "Search Kiwi..."}
+          placeholder={
+            searchMode === 0
+              ? "Quick access..."
+              : searchMode === 1
+                ? "Search Google..."
+                : searchMode === 2
+                  ? "Search Kiwi..."
+                  : "="
+          }
           value={searchValue}
           onChange={(e) => {
+            if (e.target.value[0] === "=") {
+              setSearchMode(3)
+              setSearchValue(e.target.value.slice(1).trim())
+            }
             setSearchValue(e.target.value)
           }}
           autoComplete="off"
@@ -278,6 +308,11 @@ function Home() {
                 {suggestion.title}
               </div>
             ))}
+          </div>
+        )}
+        {searchMode === 3 && searchValue.trim().length > 0 && !isNaN(calcValue) && (
+          <div className="calc-result">
+            <p>{`= ${calcValue}`}</p>
           </div>
         )}
       </form>
