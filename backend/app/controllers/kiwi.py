@@ -285,10 +285,12 @@ def remove_escapes(raw_content: str) -> str:
     while i < len(raw_content):
         if raw_content[i : i + 2] == "$$" and latex != "inline":
             latex = "fullline" if latex == "out" else "out"
+            result += "$$"
             i += 2
             continue
         if raw_content[i : i + 1] == "$" and latex != "fullline":
             latex = "inline" if latex == "out" else "out"
+            result += "$"
             i += 1
             continue
         if raw_content[i] == "\\" and i + 1 < len(raw_content) and latex == "out":
