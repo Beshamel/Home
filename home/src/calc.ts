@@ -55,14 +55,6 @@ interface Symbol {
   display: (reqP?: boolean, reqL?: number, ...args: Expression[]) => string
 }
 
-interface FuncSymbol {
-  symb: string
-  f: (...args: number[]) => number
-  display: (...args: Expression[]) => string
-  validateInput?: (...args: number[]) => boolean
-  errorMsg?: string
-}
-
 interface ConstantSymbol {
   symb: string
   value: number
@@ -82,77 +74,133 @@ const constantsLib: ConstantSymbol[] = [
   },
 ]
 
+interface FuncSymbol {
+  symb: string
+  f: (...args: number[]) => number
+  display: (reqP?: boolean, reqL?: number, ...args: Expression[]) => string
+  validateInput?: (...args: number[]) => boolean
+  errorMsg?: string
+}
+
 const singleArgFunctionLib: FuncSymbol[] = [
   {
     symb: "sqrt",
     f: Math.sqrt,
-    display: (arg) => `\\sqrt\{${arg.display()}\}`,
+    display: (_, __, arg) => `\\sqrt\{${arg.display()}\}`,
     validateInput: (x) => x >= 0,
     errorMsg: "Negative root",
   },
   {
     symb: "ln",
     f: Math.log,
-    display: (arg) => `\\ln(${arg.display()})`,
+    display: (_, __, arg) => `\\ln(${arg.display()})`,
     validateInput: (x) => x > 0,
     errorMsg: "Negative log",
   },
   {
     symb: "cos",
     f: Math.cos,
-    display: (arg) => `\\cos\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\cos\\left(${arg.display()}\\right)`,
   },
   {
     symb: "sin",
     f: Math.sin,
-    display: (arg) => `\\sin\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\sin\\left(${arg.display()}\\right)`,
   },
   {
     symb: "tan",
     f: Math.tan,
-    display: (arg) => `\\tan\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\tan\\left(${arg.display()}\\right)`,
   },
   {
     symb: "acos",
     f: Math.acos,
-    display: (arg) => `\\acos\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\acos\\left(${arg.display()}\\right)`,
   },
   {
     symb: "asin",
     f: Math.asin,
-    display: (arg) => `\\asin\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\asin\\left(${arg.display()}\\right)`,
   },
   {
     symb: "atan",
     f: Math.atan,
-    display: (arg) => `\\atan\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\atan\\left(${arg.display()}\\right)`,
   },
   {
     symb: "ch",
     f: Math.cosh,
-    display: (arg) => `\\cosh\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\cosh\\left(${arg.display()}\\right)`,
   },
   {
     symb: "sh",
     f: Math.sinh,
-    display: (arg) => `\\sinh\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\sinh\\left(${arg.display()}\\right)`,
   },
   {
     symb: "exp",
     f: Math.exp,
-    display: (arg) => `\\exp\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\exp\\left(${arg.display()}\\right)`,
   },
   {
     symb: "abs",
     f: Math.abs,
-    display: (arg) => `\\left| ${arg.display()} \\right|`,
+    display: (_, __, arg) => `\\left| ${arg.display()} \\right|`,
   },
   {
     symb: "floor",
     f: Math.floor,
-    display: (arg) => `\\left\\lfloor ${arg.display()} \\right\\rfloor`,
+    display: (_, __, arg) => `\\left\\lfloor ${arg.display()} \\right\\rfloor`,
   },
 ]
+
+const manyArgFunctionLib: FuncSymbol[] = [
+  {
+    symb: "avg",
+    f: (...args) => {
+      let s = 0
+      for (var x of args) s += x
+      return s / args.length
+    },
+    validateInput: (...args) => args.length > 0,
+    errorMsg: "Empty mean",
+    display: (reqP = false, reqL, ...args) => {
+      if (args.length === 0) throw new Error("Empty mean")
+      if (args.length === 1) return args[0].display(reqP, reqL)
+      let s = args[0].display(true, 0)
+      for (var i = 1; i < args.length; i++) {
+        s += ` + ${args[i].display(true, 0)}`
+      }
+      return bracketise(`\\frac\{${s}\}\{${args.length}\}`, reqP && reqL! > 1)
+    },
+  },
+]
+
+function findManyFuncArgs(input: string): Expression[] {
+  let i = -1
+  let depth = 0
+  do {
+    i++
+    if (input[i] === "(") {
+      depth++
+      continue
+    }
+    if (input[i] === ")") {
+      depth--
+      continue
+    }
+
+    if (depth < 0) throw Error(`Invalid bracketting (depth = ${depth})`)
+    if (depth === 0) {
+      if (input[i] === ",")
+        return [
+          parseMath(input.slice(0, i)),
+          ...findManyFuncArgs(input.slice(i + 1)),
+        ]
+    }
+  } while (i < input.length)
+  return [parseMath(input)]
+}
 
 function fact(n: number): number {
   if (n < 0) throw new Error("Negative factorial")
@@ -323,8 +371,30 @@ export function parseMath(input: string): Expression {
             throw new Error(func.errorMsg)
           return func.f(x)
         },
-        () => func.display(arg),
+        (reqP, reqL) => func.display(reqP, reqL, arg),
         arg,
+      )
+    }
+  }
+
+  for (var func of manyArgFunctionLib) {
+    if (word0 === func.symb) {
+      if (input[func.symb.length] != "(")
+        throw new Error("Manifold function without brackets")
+      const args = findManyFuncArgs(
+        input.slice(
+          func.symb.length + 1,
+          input[input.length - 1] === ")" ? -1 : undefined,
+        ),
+      )
+      return new Function(
+        (...x) => {
+          if (func.validateInput && !func.validateInput(...x))
+            throw new Error(func.errorMsg)
+          return func.f(...x)
+        },
+        (reqP, reqL) => func.display(reqP, reqL, ...args),
+        ...args,
       )
     }
   }
