@@ -146,9 +146,7 @@ function Kiwi() {
           <button type="submit">{"Submit"}</button>
         </form>
       </PopupMenu>
-      <div className="kiwi-sidebar">
-        {pageContent && <div className="kiwi-toc">{renderTableOfContents(pageContent)}</div>}
-      </div>
+      <div className="kiwi-sidebar">{pageContent != null && renderTableOfContents(pageContent)}</div>
       <main className="kiwi-main">
         <header className="kiwi-header">
           <button onClick={handleGoHome}>{"Home"}</button>
@@ -219,7 +217,7 @@ function renderTableOfContents(data: KiwiPageData) {
   return (
     <div className="table-of-contents">
       {titles.map((title) => (
-        <div
+        <button
           key={title.id}
           className={`toc-item depth-${title.depth}`}
           onClick={() =>
@@ -234,7 +232,7 @@ function renderTableOfContents(data: KiwiPageData) {
           >
             {title.text}
           </div>
-        </div>
+        </button>
       ))}
     </div>
   )
