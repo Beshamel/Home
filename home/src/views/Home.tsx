@@ -3,7 +3,8 @@ import type { KiwiPageData, QuickAccessLink } from "../types"
 import queryClient from "../api/client"
 import { LocalTimeMode, LocalUTC, LocalDisplaySeconds } from "../api/localStorage"
 import { useNavigate } from "react-router"
-import { evaluateString } from "../calc"
+import { parseMath } from "../calc"
+import Latex from "react-latex-next"
 
 const maxSuggestions = 5
 
@@ -25,6 +26,7 @@ function Home() {
   const [quickAccessRouting, setQuickAccessRouting] = useState(false)
 
   const [calcValue, setCalcValue] = useState(NaN)
+  const [calcExpDisplay, setCalcExpDisplay] = useState("")
 
   const [timeFormat, setTimeFormat] = useState<string>(LocalTimeMode.get()!)
   const [timeUTC, setTimeUTC] = useState(LocalUTC.get() === "true")
@@ -171,8 +173,24 @@ function Home() {
         })
     }
     if (searchMode === 3) {
-      if (searchValue.trim().length) setCalcValue(evaluateString(searchValue.trim()))
-      else setCalcValue(NaN)
+      if (searchValue.trim().length) {
+        try {
+          const exp = parseMath(searchValue.trim())
+          try {
+            setCalcExpDisplay(exp.display())
+          } catch {
+            setCalcExpDisplay("")
+          }
+          try {
+            setCalcValue(exp.evaluate())
+          } catch {
+            setCalcValue(NaN)
+          }
+        } catch {
+          setCalcExpDisplay("")
+          setCalcValue(NaN)
+        }
+      }
     }
   }, [searchValue, searchMode])
 
@@ -262,8 +280,7 @@ function Home() {
             if (e.target.value[0] === "=") {
               setSearchMode(3)
               setSearchValue(e.target.value.slice(1).trim())
-            }
-            setSearchValue(e.target.value)
+            } else setSearchValue(e.target.value)
           }}
           autoComplete="off"
           spellCheck={false}
@@ -310,9 +327,10 @@ function Home() {
             ))}
           </div>
         )}
-        {searchMode === 3 && searchValue.trim().length > 0 && !isNaN(calcValue) && (
+        {searchMode === 3 && searchValue.trim().length > 0 && (
           <div className="calc-result">
             <p>{`= ${calcValue}`}</p>
+            {calcExpDisplay.length > 0 && <Latex>{`$$ ${calcExpDisplay} $$`}</Latex>}
           </div>
         )}
       </form>
