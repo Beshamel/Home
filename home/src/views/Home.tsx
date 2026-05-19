@@ -73,7 +73,7 @@ function Home() {
         }
         if (e.key === "Tab") {
           e.preventDefault()
-          setSearchMode((mode) => (mode === 3 ? 0 : (mode + 1) % 3))
+          setSearchMode((mode) => (mode === 4 ? 1 : mode === 3 ? 0 : (mode + 1) % 3))
         }
         if (e.key === "ArrowDown") {
           e.preventDefault()
@@ -229,6 +229,17 @@ function Home() {
     }
   }, [searchValue, searchMode, quickAccessLinks])
 
+  useEffect(() => {
+    if (searchMode <= 2) {
+      if (
+        (searchValue.slice(1, searchValue.length).includes(".") || searchValue.includes("://")) &&
+        !searchValue.includes(" ")
+      ) {
+        setSearchMode(4)
+      }
+    }
+  }, [searchValue])
+
   const displayedTime = timeUTC ? new Date(time.getTime() + time.getTimezoneOffset() * 60000) : time
 
   const day = displayedTime.getDate()
@@ -268,6 +279,10 @@ function Home() {
         role="search"
         ref={formRef}
         onSubmit={(e) => {
+          if (searchMode === 4) {
+            e.preventDefault()
+            window.location.href = searchValue.includes("://") ? searchValue : `https://${searchValue}`
+          }
           if (searchMode === 0 && suggestionIndex != -1) {
             e.preventDefault()
             const suggestion = quickAccessSuggestions[suggestionIndex]
@@ -304,7 +319,9 @@ function Home() {
                 ? " google-search-mode"
                 : searchMode === 2
                   ? " kiwi-search-mode"
-                  : " calc-mode")
+                  : searchMode === 3
+                    ? " calc-mode"
+                    : " url-mode")
           }
           name="q"
           type="text"
@@ -315,7 +332,9 @@ function Home() {
                 ? "Search Google..."
                 : searchMode === 2
                   ? "Search Kiwi..."
-                  : "="
+                  : searchMode === 3
+                    ? "="
+                    : "https://..."
           }
           value={searchValue}
           onChange={(e) => {

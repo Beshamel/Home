@@ -97,6 +97,11 @@ h1 {
   box-shadow: 0 0 0 3px rgba(255, 221, 67, 0.25);
 }
 
+.home-search-form input.url-mode:focus {
+  border-color: rgb(255, 255, 255);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+}
+
 .google-suggestions,
 .kiwi-suggestions,
 .quick-access-suggestions,
