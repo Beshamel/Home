@@ -232,7 +232,7 @@ function Home() {
   useEffect(() => {
     if (searchMode <= 2) {
       if (
-        (searchValue.slice(1, searchValue.length).includes(".") || searchValue.includes("://")) &&
+        (searchValue.slice(1, searchValue.length - 1).includes(".") || searchValue.includes("://")) &&
         !searchValue.includes(" ")
       ) {
         setSearchMode(4)
