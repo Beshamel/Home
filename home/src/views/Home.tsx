@@ -73,7 +73,7 @@ function Home() {
         }
         if (e.key === "Tab") {
           e.preventDefault()
-          setSearchMode((mode) => (mode + 1) % 3)
+          setSearchMode((mode) => (mode === 3 ? 0 : (mode + 1) % 3))
         }
         if (e.key === "ArrowDown") {
           e.preventDefault()
