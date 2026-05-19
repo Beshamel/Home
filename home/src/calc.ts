@@ -1,9 +1,3 @@
-// Parenthesis request levels :
-// -1 : %
-// 0 : +-
-// 1 : */
-// 2 : ^!
-
 export interface Expression {
   display: (reqP?: boolean, reqL?: number) => string
   evaluate: () => number
@@ -115,17 +109,17 @@ const singleArgFunctionLib: FuncSymbol[] = [
   {
     symb: "acos",
     f: Math.acos,
-    display: (_, __, arg) => `\\acos\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\arccos\\left(${arg.display()}\\right)`,
   },
   {
     symb: "asin",
     f: Math.asin,
-    display: (_, __, arg) => `\\asin\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\arcsin\\left(${arg.display()}\\right)`,
   },
   {
     symb: "atan",
     f: Math.atan,
-    display: (_, __, arg) => `\\atan\\left(${arg.display()}\\right)`,
+    display: (_, __, arg) => `\\arctan\\left(${arg.display()}\\right)`,
   },
   {
     symb: "ch",
@@ -244,9 +238,9 @@ export function parseMath(input: string): Expression {
 
   let i = -1
   let depth = 0
+  let lastModulo: Symbol | null = null
   let lastAdditive: Symbol | null = null
   let lastMultiplicative: Symbol | null = null
-  let lastModulo: Symbol | null = null
   let lastPower: Symbol | null = null
   do {
     i++

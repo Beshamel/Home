@@ -17,15 +17,16 @@ class QuickAccessLink(Base):
     qas: Mapped[List["QuickAccessShortcut"]] = relationship(
         "QuickAccessShortcut",
         back_populates="link",
+        cascade="all, delete-orphan",
     )
 
     @property
     def shortcuts(self) -> List[str]:
         return [s.shortcut for s in self.qas]
-    
+
     @shortcuts.setter
     def shortcuts(self, shortcuts: List[str]) -> None:
-        self.qas = [QuickAccessShortcut(shortcut=s) for s in shortcuts]
+        self.qas = [QuickAccessShortcut(shortcut=s, link=self) for s in shortcuts]
 
 
 class QuickAccessShortcut(Base):

@@ -6,6 +6,8 @@ import { useNavigate } from "react-router"
 import { parseMath } from "../calc"
 import Latex from "react-latex-next"
 
+import GearIcon from "../assets/svg/gear.svg"
+
 const maxSuggestions = 5
 
 function Home() {
@@ -23,6 +25,7 @@ function Home() {
   const [suggestionIndex, setSuggestionIndex] = useState(-1)
 
   const [quickAccessLinks, setQuickAccessLinks] = useState<QuickAccessLink[]>([])
+  const [quickAccessSuggestions, setQuickAccessSuggestions] = useState<QuickAccessLink[]>([])
   const [quickAccessRouting, setQuickAccessRouting] = useState(false)
 
   const [calcValue, setCalcValue] = useState(NaN)
@@ -74,6 +77,9 @@ function Home() {
         }
         if (e.key === "ArrowDown") {
           e.preventDefault()
+          if (searchMode === 0 && quickAccessSuggestions.length > 0) {
+            setSuggestionIndex((index) => (index + 1) % Math.min(quickAccessSuggestions.length, maxSuggestions))
+          }
           if (searchMode === 1 && googleSuggestions.length > 0) {
             setSuggestionIndex((index) => (index + 1) % Math.min(googleSuggestions.length, maxSuggestions))
           }
@@ -83,6 +89,13 @@ function Home() {
         }
         if (e.key === "ArrowUp") {
           e.preventDefault()
+          if (searchMode === 0 && quickAccessSuggestions.length > 0) {
+            setSuggestionIndex(
+              (index) =>
+                (index - 1 + Math.min(quickAccessSuggestions.length, maxSuggestions)) %
+                Math.min(quickAccessSuggestions.length, maxSuggestions),
+            )
+          }
           if (searchMode === 1 && googleSuggestions.length > 0) {
             setSuggestionIndex(
               (index) =>
@@ -126,16 +139,38 @@ function Home() {
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [timeUTC, timeFormat, displaySeconds, searchMode, googleSuggestions, kiwiSuggestions, searchValue])
+  }, [
+    timeUTC,
+    timeFormat,
+    displaySeconds,
+    searchMode,
+    quickAccessSuggestions,
+    googleSuggestions,
+    kiwiSuggestions,
+    searchValue,
+  ])
 
   useEffect(() => {
     if (quickAccessRouting) return
     if (searchMode === 0) {
-      const matches = quickAccessLinks.filter((l) => l.shortcuts.some((s) => s.startsWith(searchValue.toLowerCase())))
+      if (searchValue.trim() === "") {
+        setQuickAccessSuggestions([])
+        return
+      }
+      const matches = quickAccessLinks.filter((l) =>
+        l.shortcuts.some((s) => s.toLowerCase().startsWith(searchValue.toLowerCase())),
+      )
+      if (matches.length === 0) {
+        setQuickAccessSuggestions([])
+        return
+      }
       if (matches.length === 1) {
         window.location.href = matches[0].url
         setSearchValue(matches[0].dname)
         setQuickAccessRouting(true)
+      }
+      if (matches.length > 1) {
+        setQuickAccessSuggestions(matches)
       }
     }
     if (searchMode === 1) {
@@ -192,7 +227,7 @@ function Home() {
         }
       }
     }
-  }, [searchValue, searchMode])
+  }, [searchValue, searchMode, quickAccessLinks])
 
   const displayedTime = timeUTC ? new Date(time.getTime() + time.getTimezoneOffset() * 60000) : time
 
@@ -233,6 +268,13 @@ function Home() {
         role="search"
         ref={formRef}
         onSubmit={(e) => {
+          if (searchMode === 0 && suggestionIndex != -1) {
+            e.preventDefault()
+            const suggestion = quickAccessSuggestions[suggestionIndex]
+            window.location.href = suggestion.url
+            setSearchValue(suggestion.dname)
+            searchRef.current && (searchRef.current.value = suggestion.dname)
+          }
           if (searchMode === 1 && suggestionIndex != -1) {
             const suggestion = googleSuggestions[suggestionIndex]
             setSearchValue(suggestion)
@@ -288,6 +330,26 @@ function Home() {
           disabled={quickAccessRouting}
           ref={searchRef}
         />
+        {searchMode === 0 && quickAccessSuggestions.length > 0 && (
+          <div className="quick-access-suggestions">
+            {quickAccessSuggestions.slice(0, maxSuggestions).map((suggestion, index) => (
+              <div
+                key={index}
+                className={`quick-access-suggestion${index === suggestionIndex ? " selected" : ""}`}
+                onMouseEnter={() => {
+                  setSuggestionIndex(index)
+                }}
+                onClick={() => {
+                  window.location.href = suggestion.url
+                  setSearchValue(suggestion.dname)
+                  searchRef.current && (searchRef.current.value = suggestion.dname)
+                }}
+              >
+                {suggestion.dname}
+              </div>
+            ))}
+          </div>
+        )}
         {searchMode === 1 && googleSuggestions.length > 0 && (
           <div className="google-suggestions">
             {googleSuggestions.slice(0, maxSuggestions).map((suggestion, index) => (
@@ -318,8 +380,8 @@ function Home() {
                   setSuggestionIndex(index)
                 }}
                 onClick={() => {
-                  setSearchValue(suggestion.title)
                   navigate(`kiwi/${suggestion.fTitle}`)
+                  setSearchValue(suggestion.title)
                 }}
               >
                 {suggestion.title}
@@ -334,6 +396,9 @@ function Home() {
           </div>
         )}
       </form>
+      <button className="iconbutton rotate" onClick={() => navigate("/settings")}>
+        <img src={GearIcon} height="30px" />
+      </button>
     </div>
   )
 }

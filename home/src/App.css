@@ -99,6 +99,7 @@ h1 {
 
 .google-suggestions,
 .kiwi-suggestions,
+.quick-access-suggestions,
 .calc-result {
   width: min(70vw, 520px);
   height: 0px;
@@ -110,7 +111,8 @@ h1 {
 }
 
 .google-suggestion,
-.kiwi-suggestion {
+.kiwi-suggestion,
+.quick-access-suggestion {
   padding: 0.5rem 0.75rem;
   cursor: pointer;
   text-align: left;
@@ -119,8 +121,100 @@ h1 {
 .google-suggestion:hover,
 .google-suggestion.selected,
 .kiwi-suggestion:hover,
-.kiwi-suggestion.selected {
+.kiwi-suggestion.selected,
+.quick-access-suggestion:hover,
+.quick-access-suggestion.selected {
   background-color: #3d3d3d;
+}
+
+.iconbutton {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: none;
+  background-color: transparent;
+  padding: 20px;
+  cursor: pointer;
+}
+
+.iconbutton img {
+  fill: white;
+  opacity: 1;
+  transition: .3s
+}
+
+.iconbutton:hover img {
+  opacity: .8;
+}
+
+.iconbutton.rotate:hover img {
+  transform: rotate(90deg);
+}
+
+.home-settings {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.home-settings main {
+  padding: 15px
+}
+
+.home-settings .setting-container {
+  padding: 0 20px 0 20px;
+  max-width: 100%;
+  width: fit-content;
+}
+
+.quick-access-link-setting {
+  padding: 10px;
+  padding-bottom: 0
+}
+
+.quick-access-link-setting p {
+  margin: 0;
+}
+
+.quick-access-link-setting .inline-button,
+.quick-access-link-setting input,
+.quick-access-link-setting .new-shortcut-submit {
+  opacity: 0;
+  transition: .2s;
+}
+
+.quick-access-link-setting:hover .inline-button,
+.quick-access-link-setting:hover input,
+.quick-access-link-setting:hover .new-shortcut-submit {
+  opacity: 1;
+}
+
+.quick-access-link-setting:hover .inline-button:hover {
+  opacity: .8;
+}
+
+.quick-access-link-setting:hover .inline-button.alert:hover {
+  background-color: rgb(173, 0, 0);
+}
+
+.inline-button {
+  background-color: transparent;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  padding: 0.25rem;
+  height: 20px;
+  width: 20px;
+}
+
+.inline-button:hover {
+  opacity: .8;
+}
+
+.inline-button img {
+  height: 100%;
+  width: 100%;
 }
 
 .kiwi-page *:focus,
