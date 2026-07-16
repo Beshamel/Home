@@ -16,6 +16,7 @@ function Home() {
   const [time, setTime] = useState(new Date())
   const [searchMode, setSearchMode] = useState(0)
   const [searchValue, setSearchValue] = useState("")
+  const [searchHoverValue, setSearchHoverValue] = useState("")
   const searchRef = useRef<HTMLInputElement | null>(null)
   const formRef = useRef<HTMLFormElement | null>(null)
 
@@ -41,6 +42,7 @@ function Home() {
 
   useEffect(() => {
     setSuggestionIndex(-1)
+    setSearchHoverValue("")
   }, [searchValue, googleSuggestions, searchMode])
 
   useEffect(() => {
@@ -73,7 +75,7 @@ function Home() {
         }
         if (e.key === "Tab") {
           e.preventDefault()
-          setSearchMode((mode) => (mode === 4 ? 1 : mode === 3 ? 0 : (mode + 1) % 3))
+          setSearchMode((mode) => (mode === 4 ? 1 : mode === 3 ? 0 : (e.shiftKey ? mode + 2 : mode + 1) % 3))
         }
         if (e.key === "ArrowDown") {
           e.preventDefault()
@@ -81,7 +83,9 @@ function Home() {
             setSuggestionIndex((index) => (index + 1) % Math.min(quickAccessSuggestions.length, maxSuggestions))
           }
           if (searchMode === 1 && googleSuggestions.length > 0) {
-            setSuggestionIndex((index) => (index + 1) % Math.min(googleSuggestions.length, maxSuggestions))
+            const newIndex = (suggestionIndex + 1) % Math.min(googleSuggestions.length, maxSuggestions)
+            setSuggestionIndex(newIndex)
+            setSearchHoverValue(googleSuggestions[newIndex])
           }
           if (searchMode === 2 && kiwiSuggestions.length > 0) {
             setSuggestionIndex((index) => (index + 1) % Math.min(kiwiSuggestions.length, maxSuggestions))
@@ -97,11 +101,11 @@ function Home() {
             )
           }
           if (searchMode === 1 && googleSuggestions.length > 0) {
-            setSuggestionIndex(
-              (index) =>
-                (index - 1 + Math.min(googleSuggestions.length, maxSuggestions)) %
-                Math.min(googleSuggestions.length, maxSuggestions),
-            )
+            const newIndex =
+              (suggestionIndex - 1 + Math.min(googleSuggestions.length, maxSuggestions)) %
+              Math.min(googleSuggestions.length, maxSuggestions)
+            setSuggestionIndex(newIndex)
+            setSearchHoverValue(googleSuggestions[newIndex])
           }
           if (searchMode === 2 && kiwiSuggestions.length > 0) {
             setSuggestionIndex(
@@ -148,6 +152,7 @@ function Home() {
     googleSuggestions,
     kiwiSuggestions,
     searchValue,
+    suggestionIndex,
   ])
 
   useEffect(() => {
@@ -336,7 +341,7 @@ function Home() {
                     ? "="
                     : "https://..."
           }
-          value={searchValue}
+          value={searchHoverValue || searchValue}
           onChange={(e) => {
             if (e.target.value[0] === "=") {
               setSearchMode(3)
@@ -377,6 +382,7 @@ function Home() {
                 className={`google-suggestion${index === suggestionIndex ? " selected" : ""}`}
                 onMouseEnter={() => {
                   setSuggestionIndex(index)
+                  setSearchHoverValue(googleSuggestions[index])
                 }}
                 onClick={() => {
                   setSearchValue(suggestion)
