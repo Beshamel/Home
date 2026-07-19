@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import axios from "axios"
 import type { KiwiPageData, QuickAccessLink } from "../types"
 import queryClient from "../api/client"
 import { LocalTimeMode, LocalUTC, LocalDisplaySeconds } from "../api/localStorage"
@@ -7,6 +8,7 @@ import { parseMath } from "../calc"
 import Latex from "react-latex-next"
 
 import GearIcon from "../assets/svg/gear.svg"
+import { TasksWidget } from "./Tasks"
 
 const maxSuggestions = 5
 
@@ -35,6 +37,9 @@ function Home() {
   const [timeFormat, setTimeFormat] = useState<string>(LocalTimeMode.get()!)
   const [timeUTC, setTimeUTC] = useState(LocalUTC.get() === "true")
   const [displaySeconds, setDisplaySeconds] = useState(LocalDisplaySeconds.get() === "true")
+
+  const googleAbortControllerRef = useRef<AbortController | null>(null)
+  const kiwiAbortControllerRef = useRef<AbortController | null>(null)
 
   const refreshTime = () => {
     setTime(new Date())
@@ -156,6 +161,15 @@ function Home() {
   ])
 
   useEffect(() => {
+    if (searchMode !== 1) {
+      googleAbortControllerRef.current?.abort()
+      googleAbortControllerRef.current = null
+    }
+    if (searchMode !== 2) {
+      kiwiAbortControllerRef.current?.abort()
+      kiwiAbortControllerRef.current = null
+    }
+
     if (quickAccessRouting) return
     if (searchMode === 0) {
       if (searchValue.trim() === "") {
@@ -179,36 +193,52 @@ function Home() {
       }
     }
     if (searchMode === 1) {
+      googleAbortControllerRef.current?.abort()
+      const controller = new AbortController()
+      googleAbortControllerRef.current = controller
+
       if (searchValue.trim() === "") {
         setGoogleSuggestions([])
         return
       }
+
       queryClient
         .get("/google/suggestions", {
           params: {
             q: searchValue,
           },
+          signal: controller.signal,
         })
         .then((res) => {
+          if (controller.signal.aborted) return
           setGoogleSuggestions(res.data)
         })
         .catch((e) => {
+          if (axios.isCancel(e)) return
           console.error("Failed to fetch Google suggestions", e)
         })
     }
     if (searchMode === 2) {
+      kiwiAbortControllerRef.current?.abort()
+      const controller = new AbortController()
+      kiwiAbortControllerRef.current = controller
+
       if (searchValue.trim() === "") {
         setKiwiSuggestions([])
         return
       }
+
       queryClient
         .get<KiwiPageData[]>("/kiwi/search", {
           params: { query: searchValue.trim(), limit: maxSuggestions },
+          signal: controller.signal,
         })
         .then((res) => {
+          if (controller.signal.aborted) return
           setKiwiSuggestions(res.data)
         })
         .catch((e) => {
+          if (axios.isCancel(e)) return
           console.error("Failed to search Kiwi", e)
         })
     }
