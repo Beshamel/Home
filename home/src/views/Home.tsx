@@ -8,7 +8,6 @@ import { parseMath } from "../calc"
 import Latex from "react-latex-next"
 
 import GearIcon from "../assets/svg/gear.svg"
-import { TasksWidget } from "./Tasks"
 
 const maxSuggestions = 5
 
